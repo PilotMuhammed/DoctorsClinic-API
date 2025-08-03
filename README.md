@@ -67,4 +67,4 @@ The system is built using the latest technologies and best practices in software
 
 Below is the ERD representing the main database tables and relationships:
 
-![ERD Diagram](ERD.png)  
+![ERD Diagram](./Docs/ERD-Clinic-Project.png)  
