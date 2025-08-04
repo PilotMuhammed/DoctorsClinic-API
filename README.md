@@ -35,7 +35,7 @@ The system is built using the latest technologies and best practices in software
 - **Middleware Handling Global Exception**  
   Custom middleware was developed to catch and handle unhandled exceptions globally, ensuring consistent error responses.
 
-- **Principles of Writing Code (SOLID, DRY, KISS, etc.)**  
+- **Principles of Writing Code (SOLID)**  
   Followed throughout the project to ensure code quality, readability, and maintainability.
 
 ## Features
