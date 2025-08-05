@@ -14,4 +14,10 @@
     <Folder Include="Controllers\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DoctorsClinic.Core\DoctorsClinic.Core.csproj" />
+    <ProjectReference Include="..\DoctorsClinic.Domain\DoctorsClinic.Domain.csproj" />
+    <ProjectReference Include="..\DoctorsClinic.Infrastructrue\DoctorsClinic.Infrastructrue.csproj" />
+  </ItemGroup>
+
 </Project>
