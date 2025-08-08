@@ -3,19 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DoctorsClinic.Domain.Enums;
 
-namespace DoctorsClinic.Domain.Entities
+namespace DoctorsClinic.Core.Dtos.Users
 {
-    public class User
+    public class UserDto
     {
         public int UserID { get; set; }
         public required string Username { get; set; }
-        public required string PasswordHash { get; set; }
-        public UserRole Role { get; set; }
+        public required string Role { get; set; }        
         public int DoctorID { get; set; }
-
-
-        public required Doctor Doctor { get; set; }
+        public string? DoctorName { get; set; }  
     }
 }

@@ -9,10 +9,10 @@ namespace DoctorsClinic.Domain.Entities
     public class Specialty
     {
         public int SpecialtyID { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
+        public required string Name { get; set; }
+        public required string Description { get; set; }
 
         
-        public ICollection<Doctor> Doctors { get; set; } = new List<Doctor>();
+        public required ICollection<Doctor> Doctors { get; set; } 
     }
 }

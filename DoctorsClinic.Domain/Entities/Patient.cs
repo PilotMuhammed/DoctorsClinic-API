@@ -7,7 +7,7 @@ namespace DoctorsClinic.Domain.Entities
     public class Patient
     {
         public int PatientID { get; set; }
-        public string? FullName { get; set; }
+        public required string FullName { get; set; }
         public Gender Gender { get; set; }
         public DateTime DOB { get; set; }
         public string? Phone { get; set; }

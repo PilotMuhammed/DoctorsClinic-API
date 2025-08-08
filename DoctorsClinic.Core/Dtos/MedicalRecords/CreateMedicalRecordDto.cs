@@ -4,19 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DoctorsClinic.Domain.Entities
+namespace DoctorsClinic.Core.Dtos.MedicalRecords
 {
-    public class MedicalRecord
+    public class CreateMedicalRecordDto
     {
-        public int RecordID { get; set; }
         public int PatientID { get; set; }
         public int DoctorID { get; set; }
         public required string Diagnosis { get; set; }
         public DateTime Date { get; set; }
-        public required string Notes { get; set; }
-
-        
-        public required Patient Patient { get; set; }
-        public required Doctor Doctor { get; set; }
+        public string? Notes { get; set; }
     }
 }

@@ -13,12 +13,12 @@ namespace DoctorsClinic.Domain.Entities
         public int DoctorID { get; set; }
         public int PatientID { get; set; }
         public DateTime Date { get; set; }
-        public string? Notes { get; set; }
+        public required string Notes { get; set; }
 
         
-        public Appointment? Appointment { get; set; }
-        public Doctor? Doctor { get; set; }
-        public Patient? Patient { get; set; }
-        public ICollection<PrescriptionMedicine> PrescriptionMedicines { get; set; } = new List<PrescriptionMedicine>();
+        public required Appointment Appointment { get; set; }
+        public required Doctor Doctor { get; set; }
+        public required Patient Patient { get; set; }
+        public required ICollection<PrescriptionMedicine> PrescriptionMedicines { get; set; } 
     }
 }
