@@ -1,3 +1,4 @@
+using DoctorsClinic.Core.Mapster;
 using DoctorsClinic.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,9 @@ builder.Services.AddSwaggerGen();
 //  DbContext => Connection String
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Mapster mappings
+MappingConfig.ConfigureMappings();
 
 var app = builder.Build();
 
