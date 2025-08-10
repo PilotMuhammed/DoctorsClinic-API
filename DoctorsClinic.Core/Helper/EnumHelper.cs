@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DoctorsClinic.Core.Dtos.Helper
+namespace DoctorsClinic.Core.Helper
 {
     public static class EnumHelper
     {
@@ -12,11 +12,11 @@ namespace DoctorsClinic.Core.Dtos.Helper
         {
             var enums = new Dictionary<string, Dictionary<string, int>>();
 
-            AddEnum<DoctorsClinic.Domain.Enums.AppointmentStatus>(enums);
-            AddEnum<DoctorsClinic.Domain.Enums.Gender>(enums);
-            AddEnum<DoctorsClinic.Domain.Enums.InvoiceStatus>(enums);
-            AddEnum<DoctorsClinic.Domain.Enums.PaymentMethod>(enums);
-            AddEnum<DoctorsClinic.Domain.Enums.UserRole>(enums);
+            AddEnum<Domain.Enums.AppointmentStatus>(enums);
+            AddEnum<Domain.Enums.Gender>(enums);
+            AddEnum<Domain.Enums.InvoiceStatus>(enums);
+            AddEnum<Domain.Enums.PaymentMethod>(enums);
+            AddEnum<Domain.Enums.UserRole>(enums);
 
             return enums;
         }

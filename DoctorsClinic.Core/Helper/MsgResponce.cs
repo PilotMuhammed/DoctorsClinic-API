@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DoctorsClinic.Core.Dtos.Helper
+namespace DoctorsClinic.Core.Helper
 {
     public static class MsgResponce
     {

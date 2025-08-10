@@ -13,9 +13,9 @@ namespace DoctorsClinic.Domain.Entities
         public required string Username { get; set; }
         public required string PasswordHash { get; set; }
         public UserRole Role { get; set; }
-        public int DoctorID { get; set; }
+        public int? DoctorID { get; set; }
 
 
-        public required Doctor Doctor { get; set; }
+        public Doctor? Doctor { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using DoctorsClinic.Core.Dtos.Helper;
+﻿using DoctorsClinic.Core.Helper;
 using System;
 using System.Collections.Generic;
 using System.Linq;

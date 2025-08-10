@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace DoctorsClinic.Core.Dtos.Helper
+namespace DoctorsClinic.Core.Helper
 {
     public class PasswordValidation : ValidationAttribute
     {
