@@ -5,8 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using DoctorsClinic.Domain.Enums;
+using DoctorsClinic.Core.Dtos.Permission;
 
-namespace DoctorsClinic.Core.Dtos.Account
+namespace DoctorsClinic.Core.Dtos.Role
 {
     public static class RolePermissionMap
     {

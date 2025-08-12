@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DoctorsClinic.Core.IServices.Account
+namespace DoctorsClinic.Domain.Interfaces
 {
-    
+    public interface IScopedService
+    {
+    }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DoctorsClinic.Core.Dtos.Account
+namespace DoctorsClinic.Core.Dtos.Permission
 {
     public static class Permissions
     {
