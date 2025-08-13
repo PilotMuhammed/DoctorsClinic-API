@@ -1,18 +1,22 @@
 using DoctorsClinic.Core.Mapster;
 using DoctorsClinic.Infrastructure.Data;
+using DoctorsClinic.Infrastructure.IRepositories;
+using DoctorsClinic.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //  DbContext => Connection String
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register RepositoryWrapper With IRepositoryWrapper
+builder.Services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
 
 // Mapster mappings
 MappingConfig.ConfigureMappings();
