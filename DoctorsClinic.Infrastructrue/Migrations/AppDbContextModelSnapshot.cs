@@ -37,7 +37,6 @@ namespace DoctorsClinic.Infrastructrue.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Notes")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
@@ -65,7 +64,6 @@ namespace DoctorsClinic.Infrastructrue.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DoctorID"));
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
@@ -75,14 +73,13 @@ namespace DoctorsClinic.Infrastructrue.Migrations
                         .HasColumnType("character varying(150)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.Property<int>("SpecialtyID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("UserID")
+                    b.Property<int?>("UserID")
                         .HasColumnType("integer");
 
                     b.HasKey("DoctorID");
@@ -518,8 +515,7 @@ namespace DoctorsClinic.Infrastructrue.Migrations
 
             modelBuilder.Entity("DoctorsClinic.Domain.Entities.Appointment", b =>
                 {
-                    b.Navigation("Invoice")
-                        .IsRequired();
+                    b.Navigation("Invoice");
 
                     b.Navigation("Prescriptions");
                 });
@@ -532,8 +528,7 @@ namespace DoctorsClinic.Infrastructrue.Migrations
 
                     b.Navigation("Prescriptions");
 
-                    b.Navigation("User")
-                        .IsRequired();
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DoctorsClinic.Domain.Entities.Invoice", b =>

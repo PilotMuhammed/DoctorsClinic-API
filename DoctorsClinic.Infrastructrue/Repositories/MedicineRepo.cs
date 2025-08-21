@@ -1,4 +1,5 @@
 ﻿using DoctorsClinic.Domain.Entities;
+using DoctorsClinic.Infrastructure.Data;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -10,7 +11,7 @@ namespace DoctorsClinic.Infrastructure.Repositories
 {
     public class MedicineRepo : RepositoryBase<Medicine, int>, IMedicineRepo
     {
-        public MedicineRepo(DbContext context) : base(context) { }
+        public MedicineRepo(AppDbContext context) : base(context) { }
 
         public override async Task<Medicine?> GetByIdAsync(
             int medicineId,
@@ -36,14 +37,14 @@ namespace DoctorsClinic.Infrastructure.Repositories
         public async Task<Medicine?> GetWithPrescriptionsAsync(int medicineId)
         {
             return await _dbSet
-                .Include(m => m.PrescriptionMedicines)
+                .Include(m => m.PrescriptionMedicines!)
                     .ThenInclude(pm => pm.Prescription)
                 .FirstOrDefaultAsync(m => m.MedicineID == medicineId);
         }
         public async Task<IEnumerable<Medicine>> GetByPrescriptionIdAsync(int prescriptionId)
         {
             return await _dbSet
-                .Where(m => m.PrescriptionMedicines.Any(pm => pm.PrescriptionID == prescriptionId))
+                .Where(m => m.PrescriptionMedicines!.Any(pm => pm.PrescriptionID == prescriptionId))
                 .ToListAsync();
         }
     }

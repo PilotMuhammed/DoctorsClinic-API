@@ -1,4 +1,5 @@
 ﻿using DoctorsClinic.Domain.Entities;
+using DoctorsClinic.Infrastructure.Data;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -11,7 +12,7 @@ namespace DoctorsClinic.Infrastructure.Repositories
 {
     public class PaymentRepo : RepositoryBase<Payment, int>, IPaymentRepo
     {
-        public PaymentRepo(DbContext context) : base(context) { }
+        public PaymentRepo(AppDbContext context) : base(context) { }
 
         public override async Task<Payment?> GetByIdAsync(
             int paymentId,
@@ -39,7 +40,7 @@ namespace DoctorsClinic.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(p => p.Invoice)
-                .Where(p => p.Invoice.PatientID == patientId)
+                .Where(p => p.Invoice!.PatientID == patientId)
                 .ToListAsync();
         }
 

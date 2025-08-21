@@ -16,9 +16,8 @@ namespace DoctorsClinic.Domain.Entities
         public InvoiceStatus Status { get; set; }
         public DateTime Date { get; set; }
 
-        
-        public required Patient Patient { get; set; }
-        public required Appointment Appointment { get; set; }
-        public required ICollection<Payment> Payments { get; set; } 
+        public Patient? Patient { get; set; }
+        public Appointment? Appointment { get; set; }
+        public ICollection<Payment>? Payments { get; set; } 
     }
 }

@@ -13,7 +13,6 @@ namespace DoctorsClinic.Domain.Entities
         public required string Description { get; set; }
         public required string Type { get; set; }
 
-        
-        public required ICollection<PrescriptionMedicine> PrescriptionMedicines { get; set; } 
+        public ICollection<PrescriptionMedicine>? PrescriptionMedicines { get; set; } 
     }
 }

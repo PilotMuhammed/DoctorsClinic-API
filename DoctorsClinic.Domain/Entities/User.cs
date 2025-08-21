@@ -15,7 +15,6 @@ namespace DoctorsClinic.Domain.Entities
         public UserRole Role { get; set; }
         public int? DoctorID { get; set; }
 
-
         public Doctor? Doctor { get; set; }
     }
 }

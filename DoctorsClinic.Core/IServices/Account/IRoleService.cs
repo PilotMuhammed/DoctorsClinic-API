@@ -12,7 +12,6 @@ namespace DoctorsClinic.Core.IServices.Account
     public interface IRoleService : IScopedService
     {
         ResponseDto<List<GetRole>> GetAll();
-
         ResponseDto<List<ListDto<int>>> GetList();
     }
 }

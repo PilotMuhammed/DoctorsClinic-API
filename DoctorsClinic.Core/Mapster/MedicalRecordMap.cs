@@ -16,13 +16,13 @@ namespace DoctorsClinic.Core.Mapster
                 .Map(d => d.DoctorName, s => s.Doctor != null ? s.Doctor.FullName : null);
 
             TypeAdapterConfig<MedicalRecordDto, MedicalRecord>.NewConfig()
-                .Ignore(d => d.Patient)
-                .Ignore(d => d.Doctor);
+                .Ignore(d => d.Patient!)
+                .Ignore(d => d.Doctor!);
 
             TypeAdapterConfig<CreateMedicalRecordDto, MedicalRecord>.NewConfig()
                 .Ignore(d => d.RecordID)
-                .Ignore(d => d.Patient)
-                .Ignore(d => d.Doctor);
+                .Ignore(d => d.Patient!)
+                .Ignore(d => d.Doctor!);
 
             TypeAdapterConfig<UpdateMedicalRecordDto, MedicalRecord>.NewConfig()
                 .IgnoreIf((s, _) => s.PatientID == null, d => d.PatientID)
@@ -30,8 +30,8 @@ namespace DoctorsClinic.Core.Mapster
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Diagnosis), d => d.Diagnosis)
                 .IgnoreIf((s, _) => s.Date == null, d => d.Date)
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Notes), d => d.Notes)
-                .Ignore(d => d.Patient)
-                .Ignore(d => d.Doctor);
+                .Ignore(d => d.Patient!)
+                .Ignore(d => d.Doctor!);
 
             TypeAdapterConfig<MedicalRecord, MedicalRecordResponseDto>.NewConfig()
                 .Map(d => d.MedicalRecord, s => s.Adapt<MedicalRecordDto>()!) 

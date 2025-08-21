@@ -10,6 +10,5 @@ namespace DoctorsClinic.Domain.Enums
     {
         Male = 1,
         Female = 2,
-        undefined
     }
 }

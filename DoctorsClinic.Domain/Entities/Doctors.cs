@@ -11,15 +11,14 @@ namespace DoctorsClinic.Domain.Entities
         public int DoctorID { get; set; }
         public required string FullName { get; set; }
         public int SpecialtyID { get; set; }
-        public required string Phone { get; set; }
-        public required string Email { get; set; }
-        public int UserID { get; set; }
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
+        public int? UserID { get; set; }
 
-        
-        public required Specialty Specialty { get; set; }
-        public required User User { get; set; }
-        public required ICollection<Appointment> Appointments { get; set; }  
-        public required ICollection<MedicalRecord> MedicalRecords { get; set; }  
-        public required ICollection<Prescription> Prescriptions { get; set; } 
+        public Specialty? Specialty { get; set; }
+        public User? User { get; set; }
+        public ICollection<Appointment>? Appointments { get; set; }  
+        public ICollection<MedicalRecord>? MedicalRecords { get; set; }  
+        public ICollection<Prescription>? Prescriptions { get; set; } 
     }
 }

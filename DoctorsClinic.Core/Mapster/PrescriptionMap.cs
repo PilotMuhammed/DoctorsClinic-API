@@ -19,18 +19,18 @@ namespace DoctorsClinic.Core.Mapster
 
             TypeAdapterConfig<PrescriptionDto, Prescription>.NewConfig()
                 .Map(d => d.Notes, s => s.Notes ?? string.Empty)
-                .Ignore(d => d.Appointment)
-                .Ignore(d => d.Doctor)
-                .Ignore(d => d.Patient)
-                .Ignore(d => d.PrescriptionMedicines);
+                .Ignore(d => d.Appointment!)
+                .Ignore(d => d.Doctor!)
+                .Ignore(d => d.Patient!)
+                .Ignore(d => d.PrescriptionMedicines!);
 
             TypeAdapterConfig<CreatePrescriptionDto, Prescription>.NewConfig()
                 .Map(d => d.Notes, s => s.Notes ?? string.Empty)
                 .Ignore(d => d.PrescriptionID)
-                .Ignore(d => d.Appointment)
-                .Ignore(d => d.Doctor)
-                .Ignore(d => d.Patient)
-                .Ignore(d => d.PrescriptionMedicines);
+                .Ignore(d => d.Appointment!)
+                .Ignore(d => d.Doctor!)
+                .Ignore(d => d.Patient!)
+                .Ignore(d => d.PrescriptionMedicines!);
 
             TypeAdapterConfig<UpdatePrescriptionDto, Prescription>.NewConfig()
                 .IgnoreIf((s, _) => s.AppointmentID == null, d => d.AppointmentID)
@@ -39,10 +39,10 @@ namespace DoctorsClinic.Core.Mapster
                 .IgnoreIf((s, _) => s.Date == null, d => d.Date)
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Notes), d => d.Notes)
                 .Map(d => d.Notes, s => s.Notes ?? string.Empty)
-                .Ignore(d => d.Appointment)
-                .Ignore(d => d.Doctor)
-                .Ignore(d => d.Patient)
-                .Ignore(d => d.PrescriptionMedicines);
+                .Ignore(d => d.Appointment!)
+                .Ignore(d => d.Doctor!)
+                .Ignore(d => d.Patient!)
+                .Ignore(d => d.PrescriptionMedicines!);
 
             TypeAdapterConfig<Prescription, PrescriptionResponseDto>.NewConfig()
                 .Map(d => d.Prescription, s => s.Adapt<PrescriptionDto>()!) 

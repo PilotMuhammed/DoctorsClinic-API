@@ -15,8 +15,7 @@ namespace DoctorsClinic.Domain.Entities
         public required string Duration { get; set; }
         public required string Instructions { get; set; }
 
-        
-        public required Prescription Prescription { get; set; }
-        public required Medicine Medicine { get; set; }
+        public Prescription? Prescription { get; set; }
+        public Medicine? Medicine { get; set; }
     }
 }

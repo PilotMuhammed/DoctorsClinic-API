@@ -14,10 +14,9 @@ namespace DoctorsClinic.Domain.Entities
         public string? Email { get; set; }
         public string? Address { get; set; }
 
-        
-        public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
-        public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
-        public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
-        public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+        public ICollection<Appointment>? Appointments { get; set; }
+        public ICollection<MedicalRecord>? MedicalRecords { get; set; }
+        public ICollection<Prescription>? Prescriptions { get; set; }
+        public ICollection<Invoice>? Invoices { get; set; }
     }
 }

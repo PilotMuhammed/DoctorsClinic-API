@@ -15,8 +15,6 @@ namespace DoctorsClinic.Core.Helper
         {
             public static string NotFound = "User not found";
             public static string UserNameExists = "Username already exists!";
-            public static string Banned = "Your account is blocked";
-            public static string NotActive = "Your account is not active";
             public static string Created = "User created successfully";
             public static string Updated = "User updated successfully";
             public static string Deleted = "User deleted successfully";
@@ -36,6 +34,28 @@ namespace DoctorsClinic.Core.Helper
             public static string Created = "Doctor added successfully";
             public static string Updated = "Doctor information updated";
             public static string Deleted = "Doctor deleted successfully";
+        }
+
+        public class Specialty
+        {
+            public static string NotFound = "Specialty not found";
+            public static string Created = "Specialty added successfully";
+            public static string Updated = "Specialty information updated";
+            public static string Deleted = "Specialty deleted successfully";
+        }
+        public class MedicalRecord
+        {
+            public static string NotFound = "Medical Record not found";
+            public static string Created = "Medical Record added successfully";
+            public static string Updated = "Medical Record information updated";
+            public static string Deleted = "Medical Record deleted successfully";
+        }
+        public class Medicine
+        {
+            public static string NotFound = "Medicine not found";
+            public static string Created = "Medicine added successfully";
+            public static string Updated = "Medicine information updated";
+            public static string Deleted = "Medicine deleted successfully";
         }
 
         public class Appointment
@@ -62,12 +82,6 @@ namespace DoctorsClinic.Core.Helper
             public static string Success = "Payment completed successfully";
             public static string MethodNotSupported = "Payment method not supported";
             public static string AmountInvalid = "Invalid payment amount";
-        }
-
-        public class AccountStatus
-        {
-            public static string Locked = "Account temporarily locked, try again later";
-            public static string LockedTenMinutes = "Account temporarily locked, try again after 10 minutes";
         }
 
         public class Role

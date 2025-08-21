@@ -12,7 +12,6 @@ namespace DoctorsClinic.Domain.Entities
         public required string Name { get; set; }
         public required string Description { get; set; }
 
-        
-        public required ICollection<Doctor> Doctors { get; set; } 
+        public ICollection<Doctor>? Doctors { get; set; } 
     }
 }

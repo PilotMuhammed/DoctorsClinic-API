@@ -1,0 +1,47 @@
+﻿/* ==== الإعدادات العامة ==== */
+.swagger-ui {
+	font-family: "Segoe UI", sans-serif;
+	background: #f7f7f7; 
+	color: #333;
+	font-size: 14px;
+
+	/* ==== ترويسة الصفحة (Top Bar) ==== */
+	.swagger-ui .topbar {
+		background: #2c3e50;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.swagger-ui .topbar-wrapper .link {
+		font-size: 28سpx;
+		color: #ecf0f1; 
+		padding: 10px;
+	}
+
+	.swagger-ui .opblock-summary {
+		font-size: 16px;
+		font-weight: bold;
+		border-bottom: 1px solid;
+	}
+
+/* ==== أزرار Try It Out و Execute ==== */
+.swagger-ui .btn.try-out__btn {
+	border-radius: 5px;
+	padding: 10px 20px;
+	font-size: 14px;
+	font-weight: bold;
+	margin: 5px;
+}
+
+/* ==== تنسيق أكواد الحالة في الرد ==== */
+.swagger-ui .response .response-col_status {
+	font-size: 16px;
+	font-weight: bold;
+	border-radius: 5px;
+}
+
+/* ==== تنسيق حاوية Scheme (إن كانت ظاهرة) ==== */
+.swagger-ui .scheme-container {
+	background: #ecf0f1;
+	padding: 10px;
+	border-radius: 8px;
+}

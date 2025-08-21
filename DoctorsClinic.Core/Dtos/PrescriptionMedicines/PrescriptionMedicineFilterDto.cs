@@ -12,5 +12,6 @@ namespace DoctorsClinic.Core.Dtos.PrescriptionMedicines
         public int? MedicineID { get; set; }
         public string? Dose { get; set; }
         public string? Duration { get; set; }
+        public string? Instructions { get; set; }
     }
 }

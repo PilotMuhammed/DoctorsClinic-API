@@ -53,6 +53,11 @@ namespace DoctorsClinic.Core.Dtos.Permission
         public const string Payments_Update = "Payments.Update";
         public const string Payments_Delete = "Payments.Delete";
 
+        public const string Users_View = "Users.View";
+        public const string Users_Create = "Users.Create";
+        public const string Users_Update = "Users.Update";
+        public const string Users_Delete = "Users.Delete";
+
         public static readonly string[] All =
         {
             Patients_View, Patients_Create, Patients_Update, Patients_Delete,
@@ -63,7 +68,9 @@ namespace DoctorsClinic.Core.Dtos.Permission
             Prescriptions_View, Prescriptions_Create, Prescriptions_Update, Prescriptions_Delete,
             Medicines_View, Medicines_Create, Medicines_Update, Medicines_Delete,
             Invoices_View, Invoices_Create, Invoices_Update, Invoices_Delete,
-            Payments_View, Payments_Create, Payments_Update, Payments_Delete
+            Payments_View, Payments_Create, Payments_Update, Payments_Delete,
+            Users_View, Users_Create, Users_Update, Users_Delete,
         };
+
     }
 }

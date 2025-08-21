@@ -16,6 +16,5 @@ namespace DoctorsClinic.Core.Dtos.Account
         public int? DoctorID { get; set; }                
         public required string Token { get; set; } 
         public List<GetEnum>? Permissions { get; set; }
-
     }
 }

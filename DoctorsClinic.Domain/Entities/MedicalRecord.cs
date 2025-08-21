@@ -15,8 +15,7 @@ namespace DoctorsClinic.Domain.Entities
         public DateTime Date { get; set; }
         public required string Notes { get; set; }
 
-        
-        public required Patient Patient { get; set; }
-        public required Doctor Doctor { get; set; }
+        public Patient? Patient { get; set; }
+        public Doctor? Doctor { get; set; }
     }
 }

@@ -13,16 +13,16 @@ namespace DoctorsClinic.Core.Mapster
             TypeAdapterConfig<Specialty, SpecialtyDto>.NewConfig();
 
             TypeAdapterConfig<SpecialtyDto, Specialty>.NewConfig()
-                .Ignore(d => d.Doctors);
+                .Ignore(d => d.Doctors!);
 
             TypeAdapterConfig<CreateSpecialtyDto, Specialty>.NewConfig()
                 .Ignore(d => d.SpecialtyID)
-                .Ignore(d => d.Doctors);
+                .Ignore(d => d.Doctors!);
 
             TypeAdapterConfig<UpdateSpecialtyDto, Specialty>.NewConfig()
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Name), d => d.Name)
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Description), d => d.Description)
-                .Ignore(d => d.Doctors);
+                .Ignore(d => d.Doctors!);
 
             TypeAdapterConfig<Specialty, SpecialtyResponseDto>.NewConfig()
                 .Map(d => d.Specialty, s => s.Adapt<SpecialtyDto>()!) 

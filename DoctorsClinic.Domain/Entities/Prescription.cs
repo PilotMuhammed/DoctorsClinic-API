@@ -15,10 +15,9 @@ namespace DoctorsClinic.Domain.Entities
         public DateTime Date { get; set; }
         public required string Notes { get; set; }
 
-        
-        public required Appointment Appointment { get; set; }
-        public required Doctor Doctor { get; set; }
-        public required Patient Patient { get; set; }
-        public required ICollection<PrescriptionMedicine> PrescriptionMedicines { get; set; } 
+        public Appointment? Appointment { get; set; }
+        public Doctor? Doctor { get; set; }
+        public Patient? Patient { get; set; }
+        public ICollection<PrescriptionMedicine>? PrescriptionMedicines { get; set; } 
     }
 }

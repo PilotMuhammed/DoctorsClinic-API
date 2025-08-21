@@ -1,20 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DoctorsClinic.Infrastructure.Data;
+using DoctorsClinic.Infrastructure.IRepositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using DoctorsClinic.Infrastructure.IRepositories;
 
 namespace DoctorsClinic.Infrastructure.Repositories
 {
     public abstract class RepositoryBase<T, TKey> : IRepositoryBase<T, TKey> where T : class
     {
-        protected readonly DbContext _context;
+        protected readonly AppDbContext _context;
         protected readonly DbSet<T> _dbSet;
 
-        public RepositoryBase(DbContext context)
+        public RepositoryBase(AppDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _dbSet = _context.Set<T>();

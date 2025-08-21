@@ -17,16 +17,16 @@ namespace DoctorsClinic.Core.Mapster
                 .Map(d => d.Dose, s => s.Dose ?? string.Empty)
                 .Map(d => d.Duration, s => s.Duration ?? string.Empty)
                 .Map(d => d.Instructions, s => s.Instructions ?? string.Empty)
-                .Ignore(d => d.Prescription)
-                .Ignore(d => d.Medicine);
+                .Ignore(d => d.Prescription!)
+                .Ignore(d => d.Medicine!);
 
             TypeAdapterConfig<CreatePrescriptionMedicineDto, PrescriptionMedicine>.NewConfig()
                 .Map(d => d.Dose, s => s.Dose ?? string.Empty)
                 .Map(d => d.Duration, s => s.Duration ?? string.Empty)
                 .Map(d => d.Instructions, s => s.Instructions ?? string.Empty)
                 .Ignore(d => d.ID)
-                .Ignore(d => d.Prescription)
-                .Ignore(d => d.Medicine);
+                .Ignore(d => d.Prescription!)
+                .Ignore(d => d.Medicine!);
 
             TypeAdapterConfig<UpdatePrescriptionMedicineDto, PrescriptionMedicine>.NewConfig()
                 .IgnoreIf((s, _) => s.PrescriptionID == null, d => d.PrescriptionID)
@@ -34,8 +34,8 @@ namespace DoctorsClinic.Core.Mapster
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Dose), d => d.Dose)
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Duration), d => d.Duration)
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Instructions), d => d.Instructions)
-                .Ignore(d => d.Prescription)
-                .Ignore(d => d.Medicine);
+                .Ignore(d => d.Prescription!)
+                .Ignore(d => d.Medicine!);
 
             TypeAdapterConfig<PrescriptionMedicine, PrescriptionMedicineResponseDto>.NewConfig()
                 .Map(d => d.PrescriptionMedicine, s => s.Adapt<PrescriptionMedicineDto>()!) 

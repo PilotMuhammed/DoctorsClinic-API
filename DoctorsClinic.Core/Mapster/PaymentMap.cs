@@ -16,12 +16,12 @@ namespace DoctorsClinic.Core.Mapster
 
             TypeAdapterConfig<PaymentDto, Payment>.NewConfig()
                 .Map(d => d.PaymentMethod, s => ParsePaymentMethod(s.PaymentMethod))
-                .Ignore(d => d.Invoice);
+                .Ignore(d => d.Invoice!);
 
             TypeAdapterConfig<CreatePaymentDto, Payment>.NewConfig()
                 .Map(d => d.PaymentMethod, s => ParsePaymentMethod(s.PaymentMethod))
                 .Ignore(d => d.PaymentID)
-                .Ignore(d => d.Invoice);
+                .Ignore(d => d.Invoice!);
 
             TypeAdapterConfig<UpdatePaymentDto, Payment>.NewConfig()
                 .IgnoreIf((s, _) => s.InvoiceID == null, d => d.InvoiceID)
@@ -29,7 +29,7 @@ namespace DoctorsClinic.Core.Mapster
                 .IgnoreIf((s, _) => s.Date == null, d => d.Date)
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.PaymentMethod), d => d.PaymentMethod)
                 .Map(d => d.PaymentMethod, s => string.IsNullOrEmpty(s.PaymentMethod) ? default : ParsePaymentMethod(s.PaymentMethod))
-                .Ignore(d => d.Invoice);
+                .Ignore(d => d.Invoice!);
 
             TypeAdapterConfig<Payment, PaymentResponseDto>.NewConfig()
                 .Map(d => d.Payment, s => s.Adapt<PaymentDto>()!) 

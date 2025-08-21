@@ -15,7 +15,6 @@ namespace DoctorsClinic.Domain.Entities
         public DateTime Date { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
 
-        
-        public required Invoice Invoice { get; set; }
+        public Invoice? Invoice { get; set; }
     }
 }

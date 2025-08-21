@@ -19,16 +19,16 @@ namespace DoctorsClinic.Core.Mapster
 
             TypeAdapterConfig<InvoiceDto, Invoice>.NewConfig()
                 .Map(d => d.Status, s => ParseStatus(s.Status))
-                .Ignore(d => d.Patient)
-                .Ignore(d => d.Appointment)
-                .Ignore(d => d.Payments);
+                .Ignore(d => d.Patient!)
+                .Ignore(d => d.Appointment!)
+                .Ignore(d => d.Payments!);
 
             TypeAdapterConfig<CreateInvoiceDto, Invoice>.NewConfig()
                 .Map(d => d.Status, s => ParseStatus(s.Status))
                 .Ignore(d => d.InvoiceID)
-                .Ignore(d => d.Patient)
-                .Ignore(d => d.Appointment)
-                .Ignore(d => d.Payments);
+                .Ignore(d => d.Patient!)
+                .Ignore(d => d.Appointment!)
+                .Ignore(d => d.Payments!);
 
             TypeAdapterConfig<UpdateInvoiceDto, Invoice>.NewConfig()
                 .IgnoreIf((s, _) => s.PatientID == null, d => d.PatientID)
@@ -37,9 +37,9 @@ namespace DoctorsClinic.Core.Mapster
                 .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Status), d => d.Status)
                 .IgnoreIf((s, _) => s.Date == null, d => d.Date)
                 .Map(d => d.Status, s => s.Status == null ? default : ParseStatus(s.Status))
-                .Ignore(d => d.Patient)
-                .Ignore(d => d.Appointment)
-                .Ignore(d => d.Payments);
+                .Ignore(d => d.Patient!)
+                .Ignore(d => d.Appointment!)
+                .Ignore(d => d.Payments!);
 
             TypeAdapterConfig<Invoice, InvoiceResponseDto>.NewConfig()
                 .Map(d => d.Invoice, s => s.Adapt<InvoiceDto>()!) 

@@ -1,4 +1,5 @@
 ﻿using DoctorsClinic.Domain.Entities;
+using DoctorsClinic.Infrastructure.Data;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -10,7 +11,7 @@ namespace DoctorsClinic.Infrastructure.Repositories
 {
     public class SpecialtyRepo : RepositoryBase<Specialty, int>, ISpecialtyRepo
     {
-        public SpecialtyRepo(DbContext context) : base(context) { }
+        public SpecialtyRepo(AppDbContext context) : base(context) { }
 
         public override async Task<Specialty?> GetByIdAsync(
             int specialtyId,

@@ -1,4 +1,5 @@
-﻿using DoctorsClinic.Infrastructure.IRepositories;
+﻿using DoctorsClinic.Infrastructure.Data;
+using DoctorsClinic.Infrastructure.IRepositories;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
@@ -6,7 +7,7 @@ namespace DoctorsClinic.Infrastructure.Repositories
 {
     public class RepositoryWrapper : IRepositoryWrapper
     {
-        private readonly DbContext _context;
+        private readonly AppDbContext _context;
 
         public IPatientRepo Patients { get; }
         public IDoctorRepo Doctors { get; }
@@ -20,7 +21,7 @@ namespace DoctorsClinic.Infrastructure.Repositories
         public IUserRepo Users { get; }
         public IPrescriptionMedicineRepo PrescriptionMedicines { get; }
 
-        public RepositoryWrapper(DbContext context)
+        public RepositoryWrapper(AppDbContext context)
         {
             _context = context;
             Patients = new PatientRepo(context);
