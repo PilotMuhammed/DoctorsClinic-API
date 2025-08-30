@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DoctorsClinic.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace DoctorClinic.Api.Helper
 {
@@ -6,7 +7,7 @@ namespace DoctorClinic.Api.Helper
     {
         public static IHost MigrateDatabase<TContext>(this IHost host,
             Action<TContext, IServiceProvider> seeder,
-            int? retry = 0) where TContext : DbContext
+            int? retry = 0) where TContext : AppDbContext
         {
             int retryForAvailability = retry!.Value;
 
