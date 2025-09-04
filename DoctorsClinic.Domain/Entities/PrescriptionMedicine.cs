@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace DoctorsClinic.Domain.Entities
 {
-    public class PrescriptionMedicine
+    public class PrescriptionMedicine : BaseEntity<int>
     {
-        public int ID { get; set; }
         public int PrescriptionID { get; set; }
         public int MedicineID { get; set; }
         public required string Dose { get; set; }

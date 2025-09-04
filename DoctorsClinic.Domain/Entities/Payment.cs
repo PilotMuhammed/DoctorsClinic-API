@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DoctorsClinic.Domain.Enums;
+﻿using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Domain.Entities
 {
-    public class Payment
+    public class Payment : BaseEntity<int>
     {
-        public int PaymentID { get; set; }
         public int InvoiceID { get; set; }
         public decimal Amount { get; set; }
-        public DateTime Date { get; set; }
+        public DateTime? Date { get; set; } = DateTime.Now;
         public PaymentMethod PaymentMethod { get; set; }
 
         public Invoice? Invoice { get; set; }

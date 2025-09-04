@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace DoctorsClinic.Domain.Entities
 {
-    public class Doctor
+    public class Doctor : BaseEntity<int>
     {
-        public int DoctorID { get; set; }
         public required string FullName { get; set; }
         public int SpecialtyID { get; set; }
         public string? Phone { get; set; }

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DoctorsClinic.Infrastructure.Repositories
 {
-    public abstract class RepositoryBase<T, TKey> : IRepositoryBase<T, TKey> where T : class
+    public abstract class RepositoryBase<T, TKey> : IRepositoryBase<T, TID>
     {
         protected readonly AppDbContext _context;
         protected readonly DbSet<T> _dbSet;

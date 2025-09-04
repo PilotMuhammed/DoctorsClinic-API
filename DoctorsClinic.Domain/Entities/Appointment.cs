@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DoctorsClinic.Domain.Enums;
+﻿using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Domain.Entities
 {
-    public class Appointment
+    public class Appointment : BaseEntity<int>
     {
-        public int AppointmentID { get; set; }
         public int PatientID { get; set; }
         public int DoctorID { get; set; }
-        public DateTime AppointmentDate { get; set; }
+        public DateTime? AppointmentDate { get; set; } = DateTime.Now;
         public AppointmentStatus Status { get; set; }
         public string? Notes { get; set; }
         

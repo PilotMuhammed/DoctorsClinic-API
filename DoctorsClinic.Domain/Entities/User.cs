@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DoctorsClinic.Domain.Enums;
+﻿using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Domain.Entities
 {
-    public class User
+    public class User : BaseEntity<int>
     {
-        public int UserID { get; set; }
         public required string Username { get; set; }
         public required string PasswordHash { get; set; }
         public UserRole Role { get; set; }
