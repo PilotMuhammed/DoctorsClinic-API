@@ -3,7 +3,7 @@ namespace DoctorsClinic.Domain.Entities
 {
     public class Doctor : BaseEntity<int>
     {
-        public required string FullName { get; set; }
+        public string FullName { get; set; }
         public int SpecialtyID { get; set; }
         public string? Phone { get; set; }
         public string? Email { get; set; }

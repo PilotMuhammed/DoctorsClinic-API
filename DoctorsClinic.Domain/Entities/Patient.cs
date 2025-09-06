@@ -4,7 +4,7 @@ namespace DoctorsClinic.Domain.Entities
 {
     public class Patient : BaseEntity<int>
     {
-        public required string FullName { get; set; }
+        public string FullName { get; set; }
         public Gender Gender { get; set; } = Gender.undefined;
         public DateOnly DateOfBirth { get; set; }
         public string? Phone { get; set; }

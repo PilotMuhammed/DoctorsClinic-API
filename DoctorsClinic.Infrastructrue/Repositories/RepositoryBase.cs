@@ -1,106 +1,147 @@
-﻿using DoctorsClinic.Infrastructure.Data;
+﻿using DoctorsClinic.Domain.Entities;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace DoctorsClinic.Infrastructure.Repositories
 {
-    public abstract class RepositoryBase<T, TKey> : IRepositoryBase<T, TID>
+    public abstract class RepositoryBase<TModel, TID, TDbContext> : IRepositoryBase<TModel, TID>
+        where TModel : BaseEntity<TID>, new()
+        where TDbContext : DbContext
     {
-        protected readonly AppDbContext _context;
-        protected readonly DbSet<T> _dbSet;
+        private bool _disposed;
+        private TDbContext RepositoryContext { get; set; }
 
-        public RepositoryBase(AppDbContext context)
+        protected RepositoryBase(TDbContext repositoryContext)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _dbSet = _context.Set<T>();
+            RepositoryContext = repositoryContext;
         }
-
-        public virtual IQueryable<T> GetAll(
-            Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null,
-            bool track = false)
-        {
-            IQueryable<T> query = _dbSet;
-            if (!track)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            return query;
-        }
-
-        public virtual IQueryable<T> FindByCondition(
-            Expression<Func<T, bool>> predicate,
-            Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null,
-            bool track = false)
-        {
-            IQueryable<T> query = _dbSet.Where(predicate);
-
-            if (!track)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            return query;
-        }
-
-        public virtual async Task AddAsync(T entity)
-        {
-            await _dbSet.AddAsync(entity);
-        }
-
-        public virtual async Task AddRangeAsync(IEnumerable<T> entities)
-        {
-            await _dbSet.AddRangeAsync(entities);
-        }
-
-        public virtual void Update(T entity)
-        {
-            _dbSet.Update(entity);
-        }
-
-        public virtual void UpdateRange(IEnumerable<T> entities)
-        {
-            _dbSet.UpdateRange(entities);
-        }
-
-        public virtual void Remove(T entity)
-        {
-            _dbSet.Remove(entity);
-        }
-
-        public virtual void RemoveRange(IEnumerable<T> entities)
-        {
-            _dbSet.RemoveRange(entities);
-        }
-
-        public virtual async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null)
-        {
-            if (predicate != null)
-                return await _dbSet.CountAsync(predicate);
-            return await _dbSet.CountAsync();
-        }
-
-        public virtual async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
-
-        public abstract Task<T?> GetByIdAsync(
-            TKey id,
-            Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null,
-            bool track = false);
-
+        
         public void Dispose()
         {
-            _context.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    RepositoryContext.Dispose();
+                }
+            }
+            _disposed = true;
+        }
+       public IQueryable<TModel> FindByCondition(Expression<Func<TModel, bool>>? predicate = null,
+            bool track = true, bool byTenant = true)
+        {
+            var query = RepositoryContext.Set<TModel>()
+                .Where(w => !w.IsDeleted)
+                .Where(predicate ?? throw new ArgumentNullException(nameof(predicate)));
+            return track ? query.AsQueryable() : query.AsNoTracking().AsQueryable();
+        }
+
+        public async Task<TModel> FindItemByCondition(Expression<Func<TModel, bool>>? predicate = null,
+            Func<IQueryable<TModel>, IOrderedQueryable<TModel>>? orderBy = null,
+            Func<IQueryable<TModel>, IIncludableQueryable<TModel, object>>? include = null,
+            bool track = true, bool byTenant = true)
+        {
+            var query = RepositoryContext.Set<TModel>()
+                .Where(w => !w.IsDeleted)
+                .Where(predicate ?? throw new ArgumentNullException(nameof(predicate)));
+
+            if(include != null)
+            {
+                query = include(query);
+            }
+            if(orderBy != null)
+            {
+                query = orderBy(query);
+            }
+            if (track)
+            {
+                return (await query.FirstOrDefaultAsync())!;
+            }
+            return (await query.AsNoTracking().FirstOrDefaultAsync())!;
+        }
+
+        public void Add(TModel entity)
+        {
+            entity.CreatedAt = DateTime.UtcNow;
+            RepositoryContext.Set<TModel>().Add(entity);
+        }
+
+        public void AddRange(List<TModel> entities)
+        {
+            entities.ForEach(e => e.CreatedAt = DateTime.UtcNow);
+            RepositoryContext.Set<TModel>().AddRange(entities);
+        }
+
+        public async Task<bool> Insert(TModel entity)
+        {
+            entity.CreatedAt = DateTime.UtcNow;
+            await RepositoryContext.Set<TModel>().AddAsync(entity);
+            return true;
+        }
+
+        public async Task<bool> InsertRange(List<TModel> entities)
+        {
+            entities.ForEach(e => e.CreatedAt = DateTime.UtcNow);
+            await RepositoryContext.Set<TModel>().AddRangeAsync(entities);
+            return true;
+        }
+
+        public async Task<TModel> Update(TModel entity)
+        {
+            entity.ModifieAt = DateTime.UtcNow;
+            RepositoryContext.Entry(entity).State = EntityState.Modified;
+            await RepositoryContext.SaveChangesAsync();
+            return entity;
+        }
+
+        public bool UpdateRange(List<TModel> entities)
+        {
+            entities.ForEach(e => e.CreatedAt = DateTime.UtcNow);
+            RepositoryContext.Set<TModel>().UpdateRange(entities);
+            return true;
+        }
+
+        public async Task<TModel> Delete(TID id)
+        {
+            var entity = await RepositoryContext.Set<TModel>().FindAsync(id);
+            if (entity == null)
+            {
+                return entity!;
+            }
+            entity.IsDeleted = true;
+            entity.DeletedAt = DateTime.UtcNow;
+            return entity;
+        }
+        
+        public void DeleteRange(List<TModel> entities)
+        {
+            entities.ForEach(e => e.DeletedAt = DateTime.UtcNow);
+            RepositoryContext.Set<TModel>().RemoveRange(entities);
+        }
+
+        public async Task<int> Commit()
+        {
+            return await RepositoryContext.SaveChangesAsync();
+        }
+
+        public Task<int> GetCountAsync()
+        {
+            IQueryable<TModel> query = RepositoryContext.Set<TModel>();
+            return query.CountAsync();
+        }
+
+        public IQueryable<TModel> GetAll(bool byTenant = true)
+        {
+            IQueryable<TModel> query = RepositoryContext.Set<TModel>().Where(w => !w.IsDeleted);
+            return query;
         }
     }
 }

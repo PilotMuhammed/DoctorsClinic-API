@@ -18,4 +18,3 @@ namespace DoctorsClinic.Infrastructure.IRepositories
         Task<bool> SaveAllAsync();
     }
 }
-
