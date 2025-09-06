@@ -5,17 +5,17 @@ namespace DoctorsClinic.Infrastructure.Data
 {
     public class AppDbContext : DbContext
     {
-        public DbSet<Appointment> Appointments { get; set; }
-        public DbSet<Doctor> Doctors { get; set; }
-        public DbSet<Invoice> Invoices { get; set; }
-        public DbSet<MedicalRecord> MedicalRecords { get; set; }
-        public DbSet<Medicine> Medicines { get; set; }
-        public DbSet<Patient> Patients { get; set; }
-        public DbSet<Payment> Payments { get; set; }
-        public DbSet<Prescription> Prescriptions { get; set; }
-        public DbSet<PrescriptionMedicine> PrescriptionMedicines { get; set; }
-        public DbSet<Specialty> Specialties { get; set; }
-        public DbSet<User> Users { get; set; }
+        public virtual DbSet<Appointment> Appointments { get; set; }
+        public virtual DbSet<Doctor> Doctors { get; set; }
+        public virtual DbSet<Invoice> Invoices { get; set; }
+        public virtual DbSet<MedicalRecord> MedicalRecords { get; set; }
+        public virtual DbSet<Medicine> Medicines { get; set; }
+        public virtual DbSet<Patient> Patients { get; set; }
+        public virtual DbSet<Payment> Payments { get; set; }
+        public virtual DbSet<Prescription> Prescriptions { get; set; }
+        public virtual DbSet<PrescriptionMedicine> PrescriptionMedicines { get; set; }
+        public virtual DbSet<Specialty> Specialties { get; set; }
+        public virtual DbSet<User> Users { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
