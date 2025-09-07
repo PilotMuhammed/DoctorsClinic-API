@@ -8,7 +8,7 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
     {
         public void Configure(EntityTypeBuilder<Invoice> builder)
         {
-            builder.HasKey(i => i.InvoiceID);
+            builder.HasKey(i => i.Id);
 
             builder.Property(i => i.TotalAmount)
                 .IsRequired()
@@ -17,9 +17,6 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
             builder.Property(i => i.Status)
                 .IsRequired()
                 .HasConversion<int>();
-
-            builder.Property(i => i.Date)
-                .IsRequired();
 
             builder.HasOne(i => i.Patient)
                 .WithMany(p => p.Invoices)

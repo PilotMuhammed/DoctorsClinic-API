@@ -8,14 +8,11 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
     {
         public void Configure(EntityTypeBuilder<Payment> builder)
         {
-            builder.HasKey(p => p.PaymentID);
+            builder.HasKey(p => p.Id);
 
             builder.Property(p => p.Amount)
                 .IsRequired()
                 .HasColumnType("decimal(18,2)");
-
-            builder.Property(p => p.Date)
-                .IsRequired();
 
             builder.Property(p => p.PaymentMethod)
                 .IsRequired()

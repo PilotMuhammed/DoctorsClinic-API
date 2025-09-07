@@ -8,14 +8,11 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
     {
         public void Configure(EntityTypeBuilder<MedicalRecord> builder)
         {
-            builder.HasKey(m => m.RecordID);
+            builder.HasKey(m => m.Id);
 
             builder.Property(m => m.Diagnosis)
                 .IsRequired()
                 .HasMaxLength(300);
-
-            builder.Property(m => m.Date)
-                .IsRequired();
 
             builder.Property(m => m.Notes)
                 .HasMaxLength(300);

@@ -8,7 +8,7 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
     {
         public void Configure(EntityTypeBuilder<Specialty> builder)
         {
-            builder.HasKey(s => s.SpecialtyID);
+            builder.HasKey(s => s.Id);
 
             builder.Property(s => s.Name)
                 .IsRequired()

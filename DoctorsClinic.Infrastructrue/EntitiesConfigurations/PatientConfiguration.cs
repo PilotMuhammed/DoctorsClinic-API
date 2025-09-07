@@ -8,7 +8,7 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
     {
         public void Configure(EntityTypeBuilder<Patient> builder)
         {
-            builder.HasKey(p => p.PatientID);
+            builder.HasKey(p => p.Id);
 
             builder.Property(p => p.FullName)
                 .IsRequired()
@@ -18,14 +18,11 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
                 .IsRequired()
                 .HasConversion<int>();
 
-            builder.Property(p => p.DOB)
+            builder.Property(p => p.DateOfBirth)
                 .IsRequired();
 
             builder.Property(p => p.Phone)
                 .HasMaxLength(15);
-
-            builder.Property(p => p.Email)
-                .HasMaxLength(100);
 
             builder.Property(p => p.Address)
                 .HasMaxLength(200);

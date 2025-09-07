@@ -8,7 +8,7 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
-            builder.HasKey(u => u.UserID);
+            builder.HasKey(u => u.Id);
 
             builder.Property(u => u.Username)
                 .IsRequired()
@@ -22,7 +22,6 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
                 .IsRequired()
                 .HasConversion<int>();
 
-            
             builder.HasOne(u => u.Doctor)
                 .WithOne(d => d.User)
                 .HasForeignKey<User>(u => u.DoctorID)

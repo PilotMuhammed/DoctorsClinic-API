@@ -8,10 +8,7 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
     {
         public void Configure(EntityTypeBuilder<Appointment> builder)
         {
-            builder.HasKey(a => a.AppointmentID);
-
-            builder.Property(a => a.AppointmentDate)
-                .IsRequired();
+            builder.HasKey(a => a.Id);
 
             builder.Property(a => a.Status)
                 .IsRequired()

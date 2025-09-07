@@ -8,15 +8,18 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
     {
         public void Configure(EntityTypeBuilder<PrescriptionMedicine> builder)
         {
-            builder.HasKey(pm => pm.ID);
+            builder.HasKey(pm => pm.Id);
 
             builder.Property(pm => pm.Dose)
+                .IsRequired()
                 .HasMaxLength(100);
 
             builder.Property(pm => pm.Duration)
+                .IsRequired()
                 .HasMaxLength(100);
 
             builder.Property(pm => pm.Instructions)
+                .IsRequired()
                 .HasMaxLength(200);
 
             builder.HasOne(pm => pm.Prescription)
