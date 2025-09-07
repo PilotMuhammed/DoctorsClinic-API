@@ -2,12 +2,7 @@
 using DoctorsClinic.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Generators;
 using DoctorsClinic.Domain.Helper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace DoctorsClinic.Infrastructure.Data
 {
@@ -81,49 +76,49 @@ namespace DoctorsClinic.Infrastructure.Data
 
         private static List<Specialty> GetPreconfiguredSpecialties() => new()
         {
-            new Specialty { SpecialtyID = 1, Name = "Cardiology", Description = "Heart specialist" },
-            new Specialty { SpecialtyID = 2, Name = "ENT", Description = "Ear, Nose, and Throat specialist" },
-            new Specialty { SpecialtyID = 3, Name = "Orthopedics", Description = "Bones and joints" },
-            new Specialty { SpecialtyID = 4, Name = "Dermatology", Description = "Skin specialist" }
+            new Specialty { Id = 1, Name = "Cardiology", Description = "Heart specialist" },
+            new Specialty { Id = 2, Name = "ENT", Description = "Ear, Nose, and Throat specialist" },
+            new Specialty { Id = 3, Name = "Orthopedics", Description = "Bones and joints" },
+            new Specialty { Id = 4, Name = "Dermatology", Description = "Skin specialist" }
         };
 
         private static List<Medicine> GetPreconfiguredMedicines() => new()
         {
-            new Medicine { MedicineID = 1, Name = "Aspirin", Description = "Pain reliever", Type = "Tablet" },
-            new Medicine { MedicineID = 2, Name = "Amoxicillin", Description = "Antibiotic", Type = "Capsule" },
-            new Medicine { MedicineID = 3, Name = "Lisinopril", Description = "Blood pressure", Type = "Tablet" }
+            new Medicine { Id = 1, Name = "Aspirin", Description = "Pain reliever", Type = "Tablet" },
+            new Medicine { Id = 2, Name = "Amoxicillin", Description = "Antibiotic", Type = "Capsule" },
+            new Medicine { Id = 3, Name = "Lisinopril", Description = "Blood pressure", Type = "Tablet" }
         };
 
         private static List<User> GetPreconfiguredUsers() => new()
         {
             new User
             {
-                UserID = 1,
+                Id = 1,
                 Username = "ahmed@admin",
                 PasswordHash = PasswordHasher.HashPassword("12345"), 
-                Role = UserRole.Admin // 1 => Permission Admin
+                Role = UserRole.Admin 
             },
             new User
             {
-                UserID = 2,
+                Id = 2,
                 Username = "abaas@doctor",
                 PasswordHash = PasswordHasher.HashPassword("12345"),
-                Role = UserRole.Doctor // 2 => Permission Doctor
+                Role = UserRole.Doctor 
             },
             new User
             {
-                UserID = 3,
+                Id = 3,
                 Username = "hussain@reception",
                 PasswordHash = PasswordHasher.HashPassword("12345"),
-                Role = UserRole.Receptionist // 3 => Permission Receptionist
+                Role = UserRole.Receptionist 
             },
             new User
             {
-                UserID = 4,
+                Id = 4,
                 Username = "mariam@nurse",
                 PasswordHash = PasswordHasher.HashPassword("12345"),
-                Role = UserRole.Nurse // 4 => Permission Nurse
-            } 
+                Role = UserRole.Nurse 
+            }
         };
 
         private static List<Doctor> GetPreconfiguredDoctors(AppDbContext db)
@@ -135,22 +130,13 @@ namespace DoctorsClinic.Infrastructure.Data
             {
                 new Doctor
                 {
-                    DoctorID = 1,
+                    Id = 1,
                     FullName = "Dr. Abbas al-Numani",
-                    SpecialtyID = specialties.FirstOrDefault(s => s.Name == "Cardiology")?.SpecialtyID ?? 1,
+                    SpecialtyID = specialties.FirstOrDefault(s => s.Name == "Cardiology")?.Id ?? 1,
                     Phone = "07712345678",
                     Email = "abbas@gmail.com",
-                    UserID = users.FirstOrDefault(u => u.Username == "abaas@doctor")?.UserID ?? 2
+                    UserID = users.FirstOrDefault(u => u.Username == "abaas@doctor")?.Id ?? 2
                 },
-                new Doctor
-                {
-                    DoctorID = 2,
-                    FullName = "Dr. Nasser Shamkhi",
-                    SpecialtyID = specialties.FirstOrDefault(s => s.Name == "ENT")?.SpecialtyID ?? 2,
-                    Phone = "07712345679",
-                    Email = "nasser@gmail.com",
-                    UserID = 0 
-                }
             };
         }
 
@@ -158,22 +144,20 @@ namespace DoctorsClinic.Infrastructure.Data
         {
             new Patient
             {
-                PatientID = 1,
+                Id = 1,
                 FullName = "Sabah Ali",
                 Gender = Gender.Male,
-                DOB = new DateTime(1995, 1, 15).ToUniversalTime(),
+                DateOfBirth = new DateOnly(1995, 1, 15),
                 Phone = "07801234567",
-                Email = "sabah@gmail.com",
                 Address = "Karbala"
             },
             new Patient
             {
-                PatientID = 2,
+                Id = 2,
                 FullName = "Sara Mohammed",
                 Gender = Gender.Female,
-                DOB = new DateTime(2001, 8, 27).ToUniversalTime(),
+                DateOfBirth = new DateOnly(2001, 8, 27),
                 Phone = "07801234568",
-                Email = "sara@gmail.com",
                 Address = "Baghdad"
             }
         };
@@ -187,18 +171,18 @@ namespace DoctorsClinic.Infrastructure.Data
             {
                 new Appointment
                 {
-                    AppointmentID = 1,
-                    PatientID = patient?.PatientID ?? 1,
-                    DoctorID = doctor?.DoctorID ?? 1,
+                    Id = 1,
+                    PatientID = patient?.Id ?? 1,
+                    DoctorID = doctor?.Id ?? 1,
                     AppointmentDate = DateTime.UtcNow.AddDays(-2),
                     Status = AppointmentStatus.Completed,
                     Notes = "Routine check-up"
                 },
                 new Appointment
                 {
-                    AppointmentID = 2,
-                    PatientID = patient?.PatientID ?? 2,
-                    DoctorID = doctor?.DoctorID ?? 1,
+                    Id = 2,
+                    PatientID = patient?.Id ?? 2,
+                    DoctorID = doctor?.Id ?? 1,
                     AppointmentDate = DateTime.UtcNow.AddDays(3),
                     Status = AppointmentStatus.Scheduled,
                     Notes = "Consultation"
@@ -218,18 +202,18 @@ namespace DoctorsClinic.Infrastructure.Data
             {
                 new Prescription
                 {
-                    PrescriptionID = 1,
-                    AppointmentID = appointment?.AppointmentID ?? 1,
-                    DoctorID = doctor?.DoctorID ?? 1,
-                    PatientID = patient?.PatientID ?? 1,
+                    Id = 1,
+                    AppointmentID = appointment?.Id ?? 1,
+                    DoctorID = doctor?.Id ?? 1,
+                    PatientID = patient?.Id ?? 1,
                     Date = DateTime.UtcNow.AddDays(-2),
                     Notes = "Take two tablets daily.",
                     PrescriptionMedicines = new List<PrescriptionMedicine>
                     {
                         new PrescriptionMedicine
                         {
-                            ID = 1,
-                            MedicineID = medicines.FirstOrDefault(m => m.Name == "Aspirin")?.MedicineID ?? 1,
+                            Id = 1,
+                            MedicineID = medicines.FirstOrDefault(m => m.Name == "Aspirin")?.Id ?? 1,
                             Dose = "100mg",
                             Duration = "7 days",
                             Instructions = "After meal"
@@ -248,9 +232,9 @@ namespace DoctorsClinic.Infrastructure.Data
             {
                 new MedicalRecord
                 {
-                    RecordID = 1,
-                    PatientID = patient?.PatientID ?? 1,
-                    DoctorID = doctor?.DoctorID ?? 1,
+                    Id = 1,
+                    PatientID = patient?.Id ?? 1,
+                    DoctorID = doctor?.Id ?? 1,
                     Diagnosis = "High blood pressure",
                     Date = DateTime.UtcNow.AddDays(-2),
                     Notes = "Monitor blood pressure daily"
@@ -267,9 +251,9 @@ namespace DoctorsClinic.Infrastructure.Data
             {
                 new Invoice
                 {
-                    InvoiceID = 1,
-                    PatientID = patient?.PatientID ?? 1,
-                    AppointmentID = appointment?.AppointmentID ?? 1,
+                    Id = 1,
+                    PatientID = patient?.Id ?? 1,
+                    AppointmentID = appointment?.Id ?? 1,
                     TotalAmount = 35000,
                     Status = InvoiceStatus.Paid,
                     Date = DateTime.UtcNow.AddDays(-1),
@@ -286,8 +270,8 @@ namespace DoctorsClinic.Infrastructure.Data
             {
                 new Payment
                 {
-                    PaymentID = 1,
-                    InvoiceID = invoice?.InvoiceID ?? 1,
+                    Id = 1,
+                    InvoiceID = invoice?.Id ?? 1,
                     Amount = 35000,
                     Date = DateTime.UtcNow,
                     PaymentMethod = PaymentMethod.Cash
