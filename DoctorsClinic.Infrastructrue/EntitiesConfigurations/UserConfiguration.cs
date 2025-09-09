@@ -10,17 +10,25 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
         {
             builder.HasKey(u => u.Id);
 
-            builder.Property(u => u.Username)
+            builder.Property(u => u.FullName)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            builder.Property(u => u.UserName)
                 .IsRequired()
                 .HasMaxLength(100);
 
-            builder.Property(u => u.PasswordHash)
+            builder.Property(u => u.Password)
                 .IsRequired()
-                .HasMaxLength(256);
+                .HasMaxLength(128);
 
-            builder.Property(u => u.Role)
-                .IsRequired()
-                .HasConversion<int>();
+            builder.HasOne(u => u.Role)
+                .WithMany()
+                .HasForeignKey(u => u.UserRoleID);
+
+            builder.HasMany(u => u.Permissions)
+                .WithOne(up => up.User)
+                .HasForeignKey(up => up.UserID);
 
             builder.HasOne(u => u.Doctor)
                 .WithOne(d => d.User)

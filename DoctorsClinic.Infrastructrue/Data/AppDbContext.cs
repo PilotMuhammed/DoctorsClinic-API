@@ -16,6 +16,8 @@ namespace DoctorsClinic.Infrastructure.Data
         public virtual DbSet<PrescriptionMedicine> PrescriptionMedicines { get; set; }
         public virtual DbSet<Specialty> Specialties { get; set; }
         public virtual DbSet<User> Users { get; set; }
+        public virtual DbSet<UserPermission> UserPermissions { get; set; }
+        public virtual DbSet<UserRole> UserRoles { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)

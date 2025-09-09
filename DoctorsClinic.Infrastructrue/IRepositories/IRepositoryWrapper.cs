@@ -1,4 +1,5 @@
 ﻿using DoctorsClinic.Domain.Interfaces;
+using DoctorsClinic.Infrastructrue.IRepositories;
 
 namespace DoctorsClinic.Infrastructure.IRepositories
 {
@@ -15,6 +16,8 @@ namespace DoctorsClinic.Infrastructure.IRepositories
         IPrescriptionRepo PrescriptionRepo { get; }
         ISpecialtyRepo SpecialtyRepo { get; }
         IUserRepo UserRepo { get; }
+        IPermissionsRepo PermissionsRepo { get; }
+        IRolesRepo RolesRepo { get; }
         Task<bool> SaveAllAsync();
     }
 }

@@ -1,4 +1,6 @@
-﻿using DoctorsClinic.Infrastructure.Data;
+﻿using DoctorsClinic.Infrastructrue.IRepositories;
+using DoctorsClinic.Infrastructrue.Repositories;
+using DoctorsClinic.Infrastructure.Data;
 using DoctorsClinic.Infrastructure.IRepositories;
 
 namespace DoctorsClinic.Infrastructure.Repositories
@@ -22,6 +24,8 @@ namespace DoctorsClinic.Infrastructure.Repositories
         private IPrescriptionRepo _prescriptionRepo = default!;
         private ISpecialtyRepo _specialtyRepo = default!;
         private IUserRepo _userRepo = default!;
+        private IPermissionsRepo _permissionsRepo = default!;
+        private IRolesRepo _rolesRepo = default!;
 
         public IAppointmentRepo AppointmentRepo => _appointmentRepo ??= new AppointmentRepo(_context);
         public IDoctorRepo DoctorRepo => _doctorRepo ??= new DoctorRepo(_context);
@@ -34,6 +38,8 @@ namespace DoctorsClinic.Infrastructure.Repositories
         public IPrescriptionRepo PrescriptionRepo => _prescriptionRepo ??= new PrescriptionRepo(_context);
         public ISpecialtyRepo SpecialtyRepo => _specialtyRepo ??= new SpecialtyRepo(_context);
         public IUserRepo UserRepo => _userRepo ??= new UserRepo(_context);
+        public IPermissionsRepo PermissionsRepo => _permissionsRepo ??= new PermissionsRepo(_context);
+        public IRolesRepo RolesRepo => _rolesRepo ??= new RolesRepo(_context);
 
         public async Task<bool> SaveAllAsync()
         {
