@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DoctorsClinic.Domain.Entities;
 
 namespace DoctorsClinic.Core.Dtos.Account
 {
     public class GenerateTokenDto
     {
-        public int UserId { get; set; }  
-        public required string UserName { get; set; } 
-        public required string RoleName { get; set; } 
-        public IReadOnlyCollection<string>? RolePermissions { get; set; } 
-        public IReadOnlyCollection<string>? UserPermissions { get; set; } 
+        public int Id { get; set; }  
+        public User User { get; set; }
+        public UserRole Role { get; set; }
+        public List<UserPermission>? Permissions { get; set; }
     }
 }
