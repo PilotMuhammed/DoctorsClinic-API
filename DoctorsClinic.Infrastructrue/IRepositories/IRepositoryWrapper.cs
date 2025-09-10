@@ -18,6 +18,7 @@ namespace DoctorsClinic.Infrastructure.IRepositories
         IUserRepo UserRepo { get; }
         IPermissionsRepo PermissionsRepo { get; }
         IRolesRepo RolesRepo { get; }
+        IAccountStatusRepo AccountStatusRepo { get; }
         Task<bool> SaveAllAsync();
     }
 }

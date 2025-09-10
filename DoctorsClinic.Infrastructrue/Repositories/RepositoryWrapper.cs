@@ -26,6 +26,7 @@ namespace DoctorsClinic.Infrastructure.Repositories
         private IUserRepo _userRepo = default!;
         private IPermissionsRepo _permissionsRepo = default!;
         private IRolesRepo _rolesRepo = default!;
+        private IAccountStatusRepo _accountStatusRepo = default!;
 
         public IAppointmentRepo AppointmentRepo => _appointmentRepo ??= new AppointmentRepo(_context);
         public IDoctorRepo DoctorRepo => _doctorRepo ??= new DoctorRepo(_context);
@@ -40,6 +41,7 @@ namespace DoctorsClinic.Infrastructure.Repositories
         public IUserRepo UserRepo => _userRepo ??= new UserRepo(_context);
         public IPermissionsRepo PermissionsRepo => _permissionsRepo ??= new PermissionsRepo(_context);
         public IRolesRepo RolesRepo => _rolesRepo ??= new RolesRepo(_context);
+        public IAccountStatusRepo AccountStatusRepo => _accountStatusRepo ??= new AccountStatusRepo(_context);
 
         public async Task<bool> SaveAllAsync()
         {
