@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Core.Dtos.Users
 {
     public class UserFilterDto
     {
-        public string? Username { get; set; }
-        public string? Role { get; set; }
-        public int? DoctorID { get; set; }
+        public string? FullName { get; set; }
+        public string? UserName { get; set; }
+        public Gender? Gender { get; set; }
     }
 }

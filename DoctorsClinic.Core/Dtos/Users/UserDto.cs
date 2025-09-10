@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DoctorsClinic.Core.Dtos.Role;
+using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Core.Dtos.Users
 {
     public class UserDto
     {
-        public int UserID { get; set; }
-        public required string Username { get; set; }
-        public required string Role { get; set; }        
-        public int DoctorID { get; set; }
-        public string? DoctorName { get; set; }  
+        public int Id { get; set; }
+        public string? FullName { get; set; }
+        public string? UserName { get; set; }
+        public Gender? Gender { get; set; }
+        public RoleDto? Role { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 }

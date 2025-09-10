@@ -1,15 +1,19 @@
-﻿using DoctorsClinic.Core.Dtos.Doctors;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DoctorsClinic.Core.Dtos.Account;
+using DoctorsClinic.Core.Dtos.Permission;
+using DoctorsClinic.Core.Dtos.Role;
+using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Core.Dtos.Users
 {
     public class UserResponseDto
     {
-        public required UserDto User { get; set; }
-        public DoctorDto? Doctor { get; set; }
+        public int Id { get; set; }
+        public string? FullName { get; set; }
+        public string? UserName { get; set; }
+        public Gender? Gender { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public RoleDto? Role { get; set; }
+        public GetAccountStatus? AccountStatus { get; set; }
+        public List<GetEnum>? Permissions { get; set; }
     }
 }

@@ -1,18 +1,16 @@
 ﻿using DoctorsClinic.Core.Helper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Core.Dtos.Users
 {
     public class CreateUserDto
     {
-        public required string Username { get; set; }
+        public required string FullName { get; set; }
+        public required string UserName { get; set; }
         [PasswordValidation]
-        public required string Password { get; set; }      
-        public required string Role { get; set; }          
-        public int DoctorID { get; set; }
+        public required string Password { get; set; }
+        public Gender? Gender { get; set; }
+        public int? UserRoleID { get; set; }
+        public List<int>? Permissions { get; set; }
     }
 }
