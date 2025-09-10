@@ -22,9 +22,14 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
                 .IsRequired()
                 .HasMaxLength(128);
 
+            builder.Property(u => u.Gender)
+                .IsRequired()
+                .HasConversion<int>();
+
             builder.HasOne(u => u.Role)
                 .WithMany()
-                .HasForeignKey(u => u.UserRoleID);
+                .HasForeignKey(u => u.UserRoleID)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasMany(u => u.Permissions)
                 .WithOne(up => up.User)
@@ -34,6 +39,11 @@ namespace DoctorsClinic.Infrastructure.EntitiesConfigurations
                 .WithOne(d => d.User)
                 .HasForeignKey<User>(u => u.DoctorID)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(u => u.AccountStatus)
+                .WithOne(a => a.User)
+                .HasForeignKey<AccountStatus>(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
