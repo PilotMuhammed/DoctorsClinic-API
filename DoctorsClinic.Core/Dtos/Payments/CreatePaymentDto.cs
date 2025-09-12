@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Core.Dtos.Payments
 {
@@ -10,7 +6,6 @@ namespace DoctorsClinic.Core.Dtos.Payments
     {
         public int InvoiceID { get; set; }
         public decimal Amount { get; set; }
-        public DateTime Date { get; set; }
-        public required string PaymentMethod { get; set; }   
+        public required PaymentMethod PaymentMethod { get; set; }   
     }
 }

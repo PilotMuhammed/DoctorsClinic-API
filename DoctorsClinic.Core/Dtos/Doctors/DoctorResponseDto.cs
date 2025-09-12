@@ -1,11 +1,6 @@
 ﻿using DoctorsClinic.Core.Dtos.Appointments;
 using DoctorsClinic.Core.Dtos.MedicalRecords;
 using DoctorsClinic.Core.Dtos.Prescriptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DoctorsClinic.Core.Dtos.Doctors
 {

@@ -8,7 +8,7 @@ namespace DoctorsClinic.Domain.Entities
         public int AppointmentID { get; set; }
         public decimal TotalAmount { get; set; }
         public InvoiceStatus Status { get; set; }
-        public DateTime? Date { get; set; } = DateTime.Now;
+        public DateTime Date { get; set; }
 
         public Patient? Patient { get; set; }
         public Appointment? Appointment { get; set; }

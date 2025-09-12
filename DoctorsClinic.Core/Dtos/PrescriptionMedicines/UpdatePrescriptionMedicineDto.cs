@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DoctorsClinic.Core.Dtos.PrescriptionMedicines
+﻿namespace DoctorsClinic.Core.Dtos.PrescriptionMedicines
 {
     public class UpdatePrescriptionMedicineDto
     {
-        public int ID { get; set; }
+        public int Id { get; set; }
         public int? PrescriptionID { get; set; }
         public int? MedicineID { get; set; }
         public string? Dose { get; set; }

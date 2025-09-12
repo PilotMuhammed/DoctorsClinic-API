@@ -6,7 +6,6 @@ namespace DoctorsClinic.Domain.Entities
     {
         public int InvoiceID { get; set; }
         public decimal Amount { get; set; }
-        public DateTime? Date { get; set; } = DateTime.Now;
         public PaymentMethod PaymentMethod { get; set; }
 
         public Invoice? Invoice { get; set; }

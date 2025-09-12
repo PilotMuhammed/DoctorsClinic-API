@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Core.Dtos.Appointments
 {
@@ -11,7 +7,7 @@ namespace DoctorsClinic.Core.Dtos.Appointments
         public int PatientID { get; set; }
         public int DoctorID { get; set; }
         public DateTime AppointmentDate { get; set; }
-        public required string Status { get; set; }       
+        public required AppointmentStatus Status { get; set; }       
         public string? Notes { get; set; }
     }
 }

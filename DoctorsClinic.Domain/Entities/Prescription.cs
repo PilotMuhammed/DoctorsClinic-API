@@ -6,7 +6,6 @@ namespace DoctorsClinic.Domain.Entities
         public int AppointmentID { get; set; }
         public int DoctorID { get; set; }
         public int PatientID { get; set; }
-        public DateTime? Date { get; set; } = DateTime.Now;
         public string? Notes { get; set; }
 
         public Appointment? Appointment { get; set; }
