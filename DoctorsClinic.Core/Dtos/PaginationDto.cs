@@ -1,9 +1,4 @@
 ﻿using DoctorsClinic.Core.Helper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DoctorsClinic.Core.Dtos
 {
@@ -13,16 +8,16 @@ namespace DoctorsClinic.Core.Dtos
         public decimal TotalAmount { get; set; }
         public PaginationMetadata Meta { get; set; }
 
-        public PaginationDto(List<T> data, decimal totalAmount, PaginationMetadata meta)
+        public PaginationDto(List<T> data, decimal totalAmount, PaginationMetadata metadata)
         {
             Data = data;
             TotalAmount = totalAmount;
-            Meta = meta;
+            Meta = metadata;
         }
-        public PaginationDto(List<T> data, PaginationMetadata meta)
+        public PaginationDto(List<T> data, PaginationMetadata metadata)
         {
             Data = data;
-            Meta = meta;
+            Meta = metadata;
         }
     }
 }
