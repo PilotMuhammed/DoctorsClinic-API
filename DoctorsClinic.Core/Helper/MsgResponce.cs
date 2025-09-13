@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DoctorsClinic.Core.Helper
+﻿namespace DoctorsClinic.Core.Helper
 {
     public static class MsgResponce
     {
@@ -15,9 +9,33 @@ namespace DoctorsClinic.Core.Helper
         {
             public static string NotFound = "User not found";
             public static string UserNameExists = "Username already exists!";
-            public static string Created = "User created successfully";
-            public static string Updated = "User updated successfully";
-            public static string Deleted = "User deleted successfully";
+            public static string banned = "Your account is blocked";
+            public static string NotActive = "Your account is not active";
+        }
+
+        public class AccountStatus
+        {
+            public static string Locked = "Account temporarily locked, try again later";
+            public static string LockedTenMinutes = "Account temporarily locked, try again after 10 minutes";
+        }
+
+        public class Role
+        {
+            public static string NotFound(int? id) => $"Role Id :{id} not found";
+            public static string NameExists = "Role name already exists!";
+        }
+
+        public class Permission
+        {
+            public static string Invalid(List<int> permissions) =>
+               $"The permissions: {string.Join(", ", permissions)} are invalid";
+        }
+
+        public class Password
+        {
+            public static string Wrong = "Password is wrong";
+            public static string Incorrect = "Current password is incorrect";
+            public static string Same = "Cannot use the same password as the previous one";
         }
 
         public class Patient
@@ -82,29 +100,6 @@ namespace DoctorsClinic.Core.Helper
             public static string Success = "Payment completed successfully";
             public static string MethodNotSupported = "Payment method not supported";
             public static string AmountInvalid = "Invalid payment amount";
-        }
-
-        public class Role
-        {
-            public static string NotFound(int? id) => $"Role Id :{id} not found";
-            public static string NameExists = "Role name already exists!";
-            public static string Created = "Role created successfully";
-            public static string Deleted = "Role deleted successfully";
-        }
-
-        public class Permission
-        {
-            public static string Invalid(List<int> permissions) =>
-               $"The permissions: {string.Join(", ", permissions)} are invalid";
-        }
-
-        public class Password
-        {
-            public static string Wrong = "Password is wrong";
-            public static string Incorrect = "Current password is incorrect";
-            public static string Same = "Cannot use the same password as the previous one";
-            public static string Changed = "Password changed successfully";
-            public static string TooWeak = "Password does not meet the required strength criteria";
         }
     }
 }

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DoctorsClinic.Core.Helper
+﻿namespace DoctorsClinic.Core.Helper
 {
     public class PaginationQuery : IPaginationQuery
     {
@@ -19,7 +13,7 @@ namespace DoctorsClinic.Core.Helper
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }
 
-        public PaginationMetadata(int totalCount, IPaginationQuery paginationQuery)
+        public PaginationMetadata(int totalCount, PaginationQuery paginationQuery)
         {
             var pageSize = paginationQuery.PageSize ?? 10;
             var currentPage = paginationQuery.Page ?? 1;

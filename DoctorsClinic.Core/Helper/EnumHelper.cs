@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DoctorsClinic.Domain.Enums;
+using System.ComponentModel;
 
 namespace DoctorsClinic.Core.Helper
 {
@@ -12,12 +9,11 @@ namespace DoctorsClinic.Core.Helper
         {
             var enums = new Dictionary<string, Dictionary<string, int>>();
 
-            AddEnum<Domain.Enums.AppointmentStatus>(enums);
-            AddEnum<Domain.Enums.Gender>(enums);
-            AddEnum<Domain.Enums.InvoiceStatus>(enums);
-            AddEnum<Domain.Enums.PaymentMethod>(enums);
-            AddEnum<Domain.Enums.UserRole>(enums);
-
+            AddEnum<AppointmentStatus>(enums);
+            AddEnum<EPermission>(enums);
+            AddEnum<Gender>(enums);
+            AddEnum<InvoiceStatus>(enums);
+            AddEnum<PaymentMethod>(enums);
             return enums;
         }
 
@@ -27,6 +23,14 @@ namespace DoctorsClinic.Core.Helper
             enums[typeof(TEnum).Name] = Enum.GetValues(typeof(TEnum))
                 .Cast<TEnum>()
                 .ToDictionary(e => e.ToString(), e => Convert.ToInt32(e));
+        }
+
+        public static string GetDescription(this Enum value)
+        {
+            var field = value.GetType().GetField(value.ToString());
+            var attribute = field?.GetCustomAttributes(typeof(DescriptionAttribute), false)
+                .FirstOrDefault() as DescriptionAttribute;
+            return attribute?.Description ?? value.ToString();
         }
     }
 }

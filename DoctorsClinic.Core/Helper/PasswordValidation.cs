@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace DoctorsClinic.Core.Helper
 {
@@ -17,7 +12,7 @@ namespace DoctorsClinic.Core.Helper
             if (string.IsNullOrWhiteSpace(password))
                 return new ValidationResult("Password is required.");
 
-            if (password.Length < 8)
+            if (password!.Length < 8)
                 return new ValidationResult("Password must be at least 8 characters long.");
 
             if (!Regex.IsMatch(password, @"[A-Z]"))
