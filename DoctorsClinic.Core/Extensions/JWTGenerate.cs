@@ -5,7 +5,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 
-
 namespace DoctorsClinic.Core.Extensions
 {
     public class JWTGenerate
@@ -14,38 +13,35 @@ namespace DoctorsClinic.Core.Extensions
 
         public JWTGenerate(IConfiguration config)
         {
-            var tokenKey = config["TokenKey"] ?? throw new InvalidOperationException("TokenKey is missing.");
+            var tokenKey = config["TokenKey"];
+            if (string.IsNullOrWhiteSpace(tokenKey))
+                throw new ArgumentNullException(nameof(tokenKey), "TokenKey is missing in the configuration.");
             _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
         }
 
         public string GenerateJwtToken(GenerateTokenDto generate)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, generate.UserId.ToString()),
-                new Claim(ClaimTypes.Name, generate.UserName ?? string.Empty),
-                new Claim(ClaimTypes.Role, generate.RoleName ?? string.Empty),
+                new Claim(ClaimTypes.NameIdentifier, generate.Id.ToString()),
+                new Claim(ClaimTypes.Name, generate.User.FullName),
+                new Claim(ClaimTypes.Role, generate.Role.Name),
             };
 
-            var allPermissions = (generate.RolePermissions ?? Array.Empty<string>())
-                .Concat(generate.UserPermissions ?? Array.Empty<string>())
-                .Where(p => !string.IsNullOrWhiteSpace(p))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
+            var permissions = generate.Role.Permissions?
+                .Select(p => ((int)p).ToString())
+                .Concat(generate.Permissions?.Select(p => ((int)p.Permission).ToString()) ?? Enumerable.Empty<string>())
+                .Distinct()
+                .ToList();
 
-            if (allPermissions.Length > 0)
-            {
-                claims.Add(new Claim("PermissionsId", string.Join(',', allPermissions)));
-            }
+            if (permissions?.Any() == true)
+                claims.Add(new Claim("PermissionsId", string.Join(',', permissions)));
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-
-                Expires = DateTime.UtcNow.AddMinutes(30),
-
+                Expires = DateTime.UtcNow.AddYears(1),
                 SigningCredentials = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256Signature)
             };
 
