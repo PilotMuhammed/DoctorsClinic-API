@@ -4,7 +4,6 @@ using DoctorsClinic.Core.Dtos.MedicalRecords;
 using DoctorsClinic.Core.Dtos.Patients;
 using DoctorsClinic.Core.Dtos.Prescriptions;
 using DoctorsClinic.Domain.Entities;
-using DoctorsClinic.Domain.Enums; 
 using Mapster;
 
 namespace DoctorsClinic.Core.Mapster
@@ -13,49 +12,31 @@ namespace DoctorsClinic.Core.Mapster
     {
         public static void Configure()
         {
-
-            TypeAdapterConfig<Patient, PatientDto>.NewConfig()
-                .Map(d => d.Gender, s => s.Gender.ToString());
-
-            TypeAdapterConfig<PatientDto, Patient>.NewConfig()
-                .Map(d => d.Gender, s => ParseGender(s.Gender))
-                .Ignore(d => d.Appointments!)
-                .Ignore(d => d.MedicalRecords!)
-                .Ignore(d => d.Prescriptions!)
-                .Ignore(d => d.Invoices!);
-
             TypeAdapterConfig<CreatePatientDto, Patient>.NewConfig()
-                .Map(d => d.Gender, s => ParseGender(s.Gender))
-                .Ignore(d => d.PatientID)
-                .Ignore(d => d.Appointments!)
-                .Ignore(d => d.MedicalRecords!)
-                .Ignore(d => d.Prescriptions!)
-                .Ignore(d => d.Invoices!);
-
-            TypeAdapterConfig<UpdatePatientDto, Patient>.NewConfig()
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.FullName), d => d.FullName)
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Gender), d => d.Gender)
-                .IgnoreIf((s, _) => s.DOB == null, d => d.DOB)
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Phone), d => d.Phone!)
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Email), d => d.Email!)
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Address), d => d.Address!)
-                .Map(d => d.Gender, s => string.IsNullOrEmpty(s.Gender) ? default : ParseGender(s.Gender))
-                .Ignore(d => d.Appointments!)
-                .Ignore(d => d.MedicalRecords!)
-                .Ignore(d => d.Prescriptions!)
-                .Ignore(d => d.Invoices!);
+                .Ignore(dest => dest.Appointments!)
+                .Ignore(dest => dest.MedicalRecords!)
+                .Ignore(dest => dest.Prescriptions!)
+                .Ignore(dest => dest.Invoices!);
 
             TypeAdapterConfig<Patient, PatientResponseDto>.NewConfig()
-                .Map(d => d.Patient, s => s.Adapt<PatientDto>()!)
-                .Map(d => d.Appointments, _ => (List<AppointmentDto>?)null)
-                .Map(d => d.MedicalRecords, _ => (List<MedicalRecordDto>?)null)
-                .Map(d => d.Prescriptions, _ => (List<PrescriptionDto>?)null)
-                .Map(d => d.Invoices, _ => (List<InvoiceDto>?)null);
-        }
+                .Map(dest => dest.Patient, src => src.Adapt<PatientDto>()!)
+                .Map(dest => dest.Appointments, src => src.Appointments.Adapt<List<AppointmentDto>>())
+                .Map(dest => dest.MedicalRecords, src => src.MedicalRecords.Adapt<List<MedicalRecordDto>>())
+                .Map(dest => dest.Prescriptions, src => src.Prescriptions.Adapt<List<PrescriptionDto>>())
+                .Map(dest => dest.Invoices, src => src.Invoices.Adapt<List<InvoiceDto>>());
 
-        private static Gender ParseGender(string? gender)
-        {
-            return Enum.TryParse<Gender>(gender, true, out var value) ? value : default;
+            TypeAdapterConfig<Patient, PatientDto>.NewConfig();
+
+            TypeAdapterConfig<UpdatePatientDto, Patient>.NewConfig()
+                .IgnoreIf((src, dest) => string.IsNullOrWhiteSpace(src.FullName), dest => dest.FullName)
+                .IgnoreIf((src, dest) => src.Gender == null, dest => dest.Gender)
+                .IgnoreIf((src, dest) => src.DateOfBirth == null, dest => dest.DateOfBirth)
+                .IgnoreIf((src, dest) => string.IsNullOrWhiteSpace(src.Phone), dest => dest.Phone!)
+                .IgnoreIf((src, dest) => string.IsNullOrWhiteSpace(src.Address), dest => dest.Address!)
+                .Ignore(dest => dest.Appointments!)
+                .Ignore(dest => dest.MedicalRecords!)
+                .Ignore(dest => dest.Prescriptions!)
+                .Ignore(dest => dest.Invoices!);
         }
     }
 }

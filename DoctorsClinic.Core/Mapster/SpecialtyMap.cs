@@ -9,24 +9,19 @@ namespace DoctorsClinic.Core.Mapster
     {
         public static void Configure()
         {
+            TypeAdapterConfig<CreateSpecialtyDto, Specialty>.NewConfig()
+                .Ignore(dest => dest.Doctors!);
+
+            TypeAdapterConfig<Specialty, SpecialtyResponseDto>.NewConfig()
+                .Map(dest => dest.Specialty, src => src.Adapt<SpecialtyDto>()) 
+                .Map(dest => dest.Doctors, src => src.Doctors.Adapt<List<DoctorDto>>()); 
 
             TypeAdapterConfig<Specialty, SpecialtyDto>.NewConfig();
 
-            TypeAdapterConfig<SpecialtyDto, Specialty>.NewConfig()
-                .Ignore(d => d.Doctors!);
-
-            TypeAdapterConfig<CreateSpecialtyDto, Specialty>.NewConfig()
-                .Ignore(d => d.SpecialtyID)
-                .Ignore(d => d.Doctors!);
-
             TypeAdapterConfig<UpdateSpecialtyDto, Specialty>.NewConfig()
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Name), d => d.Name)
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Description), d => d.Description)
-                .Ignore(d => d.Doctors!);
-
-            TypeAdapterConfig<Specialty, SpecialtyResponseDto>.NewConfig()
-                .Map(d => d.Specialty, s => s.Adapt<SpecialtyDto>()!) 
-                .Map(d => d.Doctors, _ => (List<DoctorDto>?)null); 
+                .IgnoreIf((src, dest) => string.IsNullOrWhiteSpace(src.Name), dest => dest.Name)
+                .IgnoreIf((src, dest) => string.IsNullOrWhiteSpace(src.Description), dest => dest.Description!)
+                .Ignore(dest => dest.Doctors!);
         }
     }
 }

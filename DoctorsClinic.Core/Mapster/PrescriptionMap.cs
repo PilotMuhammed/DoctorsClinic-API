@@ -12,44 +12,24 @@ namespace DoctorsClinic.Core.Mapster
     {
         public static void Configure()
         {
-
-            TypeAdapterConfig<Prescription, PrescriptionDto>.NewConfig()
-                .Map(d => d.DoctorName, s => s.Doctor != null ? s.Doctor.FullName : null)
-                .Map(d => d.PatientName, s => s.Patient != null ? s.Patient.FullName : null);
-
-            TypeAdapterConfig<PrescriptionDto, Prescription>.NewConfig()
-                .Map(d => d.Notes, s => s.Notes ?? string.Empty)
-                .Ignore(d => d.Appointment!)
-                .Ignore(d => d.Doctor!)
-                .Ignore(d => d.Patient!)
-                .Ignore(d => d.PrescriptionMedicines!);
-
             TypeAdapterConfig<CreatePrescriptionDto, Prescription>.NewConfig()
-                .Map(d => d.Notes, s => s.Notes ?? string.Empty)
-                .Ignore(d => d.PrescriptionID)
-                .Ignore(d => d.Appointment!)
-                .Ignore(d => d.Doctor!)
-                .Ignore(d => d.Patient!)
-                .Ignore(d => d.PrescriptionMedicines!);
-
-            TypeAdapterConfig<UpdatePrescriptionDto, Prescription>.NewConfig()
-                .IgnoreIf((s, _) => s.AppointmentID == null, d => d.AppointmentID)
-                .IgnoreIf((s, _) => s.DoctorID == null, d => d.DoctorID)
-                .IgnoreIf((s, _) => s.PatientID == null, d => d.PatientID)
-                .IgnoreIf((s, _) => s.Date == null, d => d.Date)
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Notes), d => d.Notes)
-                .Map(d => d.Notes, s => s.Notes ?? string.Empty)
-                .Ignore(d => d.Appointment!)
-                .Ignore(d => d.Doctor!)
-                .Ignore(d => d.Patient!)
-                .Ignore(d => d.PrescriptionMedicines!);
+                .Ignore(dest => dest.PrescriptionMedicines!);
 
             TypeAdapterConfig<Prescription, PrescriptionResponseDto>.NewConfig()
-                .Map(d => d.Prescription, s => s.Adapt<PrescriptionDto>()!) 
-                .Map(d => d.Appointment, _ => (AppointmentDto?)null)
-                .Map(d => d.Doctor, _ => (DoctorDto?)null)
-                .Map(d => d.Patient, _ => (PatientDto?)null)
-                .Map(d => d.PrescriptionMedicines, _ => (List<PrescriptionMedicineDto>?)null);
+                .Map(dest => dest.Prescription, src => src.Adapt<PrescriptionDto>())
+                .Map(dest => dest.Appointment, src => src.Appointment.Adapt<AppointmentDto>())
+                .Map(dest => dest.Doctor, src => src.Doctor.Adapt<DoctorDto>())
+                .Map(dest => dest.Patient, src => src.Patient.Adapt<PatientDto>())
+                .Map(dest => dest.PrescriptionMedicines, src => src.PrescriptionMedicines.Adapt<List<PrescriptionMedicineDto>>());
+
+            TypeAdapterConfig<Prescription, PrescriptionDto>.NewConfig();
+
+            TypeAdapterConfig<UpdatePrescriptionDto, Prescription>.NewConfig()
+                .IgnoreIf((src, dest) => src.AppointmentID == null, dest => dest.AppointmentID)
+                .IgnoreIf((src, dest) => src.DoctorID == null, dest => dest.DoctorID)
+                .IgnoreIf((src, dest) => src.PatientID == null, dest => dest.PatientID)
+                .IgnoreIf((src, dest) => string.IsNullOrWhiteSpace(src.Notes), dest => dest.Notes!)
+                .Ignore(dest => dest.PrescriptionMedicines!);
         }
     }
 }

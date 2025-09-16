@@ -1,8 +1,9 @@
 ﻿using DoctorsClinic.Domain.Entities;
 using DoctorsClinic.Core.Dtos.Users;
-using DoctorsClinic.Core.Dtos.Doctors; 
-using DoctorsClinic.Domain.Enums; 
 using Mapster;
+using DoctorsClinic.Core.Dtos.Account;
+using DoctorsClinic.Core.Dtos.Permission;
+using DoctorsClinic.Core.Helper;
 
 namespace DoctorsClinic.Core.Mapster
 {
@@ -10,39 +11,43 @@ namespace DoctorsClinic.Core.Mapster
     {
         public static void Configure()
         {
-
-            TypeAdapterConfig<User, UserDto>.NewConfig()
-                .Map(d => d.Role, s => s.Role.ToString())
-                .Map(d => d.DoctorName, s => s.Doctor != null ? s.Doctor.FullName : null);
-
-            TypeAdapterConfig<UserDto, User>.NewConfig()
-                .Map(d => d.Role, s => ParseRole(s.Role))
-                .Ignore(d => d.Doctor!)
-                .Ignore(d => d.PasswordHash); 
-
             TypeAdapterConfig<CreateUserDto, User>.NewConfig()
-                .Map(d => d.Role, s => ParseRole(s.Role))
-                .Map(d => d.PasswordHash, s => s.Password) 
-                .Ignore(d => d.UserID)
-                .Ignore(d => d.Doctor!);
-
-            TypeAdapterConfig<UpdateUserDto, User>.NewConfig()
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Username), d => d.Username)
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Password), d => d.PasswordHash)
-                .IgnoreIf((s, _) => string.IsNullOrWhiteSpace(s.Role), d => d.Role)
-                .IgnoreIf((s, _) => s.DoctorID == null, d => d.DoctorID!)
-                .Map(d => d.Role, s => string.IsNullOrEmpty(s.Role) ? default : ParseRole(s.Role))
-                .Map(d => d.PasswordHash, s => s.Password) 
-                .Ignore(d => d.Doctor!);
+                .Ignore(dest => dest.Password)
+                .Ignore(dest => dest.Permissions!);
 
             TypeAdapterConfig<User, UserResponseDto>.NewConfig()
-                .Map(d => d.User, s => s.Adapt<UserDto>()!)
-                .Map(d => d.Doctor, _ => (DoctorDto?)null); 
-        }
+                .Map(dest => dest.AccountStatus, src => src.AccountStatus.Adapt<GetAccountStatus>())
+                .Map(dest => dest.Permissions, src => src.Permissions!
+                .Select(per => new GetEnum
+                {
+                    Id = Convert.ToInt32(per.Permission),
+                    Name = per.Permission.ToString(),
+                    NameAr = per.Permission.GetDescription()
+                }).ToList());
 
-        private static UserRole ParseRole(string? role)
-        {
-            return Enum.TryParse<UserRole>(role, true, out var value) ? value : default;
+            TypeAdapterConfig<User, UserDto>.NewConfig();
+
+            TypeAdapterConfig<User, LoginUserResponse>.NewConfig()
+                .Map(dest => dest.Permissions, src => src.Permissions!
+                .Select(per => new GetEnum
+                {
+                    Id = Convert.ToInt32(per.Permission),
+                    Name = per.Permission.ToString(),
+                    NameAr = per.Permission.GetDescription()
+                }).ToList())
+                .Ignore(x => x.Token);
+
+            TypeAdapterConfig<UpdateUserDto, User>.NewConfig()
+                .IgnoreIf((src, dest) => string.IsNullOrWhiteSpace(src.FullName), dest => dest.FullName)
+                .IgnoreIf((src, dest) => string.IsNullOrWhiteSpace(src.UserName), dest => dest.UserName)
+                .IgnoreIf((src, dest) => src.Gender == null, dest => dest.Gender)
+                .Ignore(dest => dest.Permissions!)
+                .Ignore(dest => dest.Password);
+
+            TypeAdapterConfig<AccountStatus, GetAccountStatus>.NewConfig()
+                .Map(dest => dest.Id, src => src.Id)
+                .Map(dest => dest.IsActive, src => src.IsActive)
+                .Map(dest => dest.IsBlocked, src => src.IsBlocked);
         }
     }
 }
