@@ -3,7 +3,7 @@ using DoctorsClinic.Core.Dtos.Account;
 using DoctorsClinic.Core.Dtos.Users;
 using DoctorsClinic.Core.Extensions;
 using DoctorsClinic.Core.Helper;
-using DoctorsClinic.Core.IServices;
+using DoctorsClinic.Core.IServices.Account;
 using DoctorsClinic.Domain.Enums;
 using DoctorsClinic.Domain.Helper;
 using DoctorsClinic.Infrastructure.IRepositories;

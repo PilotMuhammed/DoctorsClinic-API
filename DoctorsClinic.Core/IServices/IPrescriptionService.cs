@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using DoctorsClinic.Core.Dtos.Prescriptions;
+﻿using DoctorsClinic.Core.Dtos.Prescriptions;
 using DoctorsClinic.Core.Dtos;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Domain.Interfaces;
@@ -10,14 +7,11 @@ namespace DoctorsClinic.Core.IServices
 {
     public interface IPrescriptionService : IScopedService
     {
-        Task<ResponseDto<PaginationDto<PrescriptionDto>>> GetAllAsync(
-            PaginationQuery pagination,
-            PrescriptionFilterDto filter,
-            CancellationToken ct = default);
-        Task<ResponseDto<List<PrescriptionDto>>> GetByAppointmentAsync(int appointmentId, CancellationToken ct = default);
-        Task<ResponseDto<PrescriptionResponseDto>> GetByIdAsync(int id, CancellationToken ct = default);
-        Task<ResponseDto<PrescriptionDto>> CreateAsync(CreatePrescriptionDto dto, CancellationToken ct = default);
-        Task<ResponseDto<PrescriptionDto>> UpdateAsync(int id, UpdatePrescriptionDto dto, CancellationToken ct = default);
-        Task<ResponseDto<bool>> DeleteAsync(int id, CancellationToken ct = default);
+        Task<ResponseDto<PaginationDto<PrescriptionDto>>> GetAll(PaginationQuery paginationQuery, PrescriptionFilterDto filter);
+        Task<ResponseDto<IEnumerable<ListDto<int>>>> GetList();
+        Task<ResponseDto<PrescriptionResponseDto>> GetById(int id);
+        Task<ResponseDto<PrescriptionDto>> Add(CreatePrescriptionDto form);
+        Task<ResponseDto<PrescriptionDto>> Update(int id, UpdatePrescriptionDto form);
+        Task<ResponseDto<bool>> Delete(int id);
     }
 }

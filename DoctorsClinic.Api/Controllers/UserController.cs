@@ -4,7 +4,7 @@ using DoctorsClinic.Core.Dtos.Account;
 using DoctorsClinic.Core.Dtos.Permission;
 using DoctorsClinic.Core.Dtos.Users;
 using DoctorsClinic.Core.Helper;
-using DoctorsClinic.Core.IServices;
+using DoctorsClinic.Core.IServices.Account;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
