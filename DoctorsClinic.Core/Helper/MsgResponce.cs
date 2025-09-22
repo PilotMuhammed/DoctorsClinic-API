@@ -41,6 +41,7 @@
         public class Patient
         {
             public static string NotFound = "Patient not found";
+
             public static string Created = "Patient added successfully";
             public static string Updated = "Patient information updated";
             public static string Deleted = "Patient deleted successfully";
@@ -49,14 +50,12 @@
         public class Doctor
         {
             public static string NotFound = "Doctor not found";
-            public static string Created = "Doctor added successfully";
-            public static string Updated = "Doctor information updated";
-            public static string Deleted = "Doctor deleted successfully";
         }
 
         public class Specialty
         {
             public static string NotFound = "Specialty not found";
+
             public static string Created = "Specialty added successfully";
             public static string Updated = "Specialty information updated";
             public static string Deleted = "Specialty deleted successfully";
@@ -64,38 +63,56 @@
         public class MedicalRecord
         {
             public static string NotFound = "Medical Record not found";
+
             public static string Created = "Medical Record added successfully";
             public static string Updated = "Medical Record information updated";
             public static string Deleted = "Medical Record deleted successfully";
         }
+
         public class Medicine
         {
             public static string NotFound = "Medicine not found";
+
             public static string Created = "Medicine added successfully";
             public static string Updated = "Medicine information updated";
             public static string Deleted = "Medicine deleted successfully";
+        }
+
+        public class Prescription
+        {
+            public static string NotFound = "Prescription not found";
+        }
+
+        public class PrescriptionMedicine
+        {
+            public static string NotFound = "Prescription Medicine not found";
         }
 
         public class Appointment
         {
             public static string NotFound = "Appointment not found";
             public static string AlreadyBooked = "The appointment slot is already booked";
-            public static string Created = "Appointment booked successfully";
-            public static string Updated = "Appointment updated";
-            public static string Cancelled = "Appointment cancelled";
-            public static string Completed = "Appointment completed";
+            public static string CurrentlyAvailable = "The appointment is currently available";
         }
 
         public class Invoice
         {
             public static string NotFound = "Invoice not found";
+
             public static string Paid = "Invoice has already been paid";
             public static string Pending = "Invoice payment is pending";
             public static string Cancelled = "Invoice has been cancelled";
         }
 
+        public class AlarmAmounts
+        {
+            public static string WrongEntry = "Total amount must be greater than zero!";
+        }
+
         public class Payment
         {
+            public static string NotFound = "Payment not found";
+
             public static string Failed = "Payment failed";
             public static string Success = "Payment completed successfully";
             public static string MethodNotSupported = "Payment method not supported";

@@ -4,7 +4,7 @@ namespace DoctorsClinic.Core.Dtos.Invoices
 {
     public class UpdateInvoiceDto
     {
-        public int InvoiceID { get; set; }
+        public int Id { get; set; }
         public int? PatientID { get; set; }
         public int? AppointmentID { get; set; }
         public decimal? TotalAmount { get; set; }

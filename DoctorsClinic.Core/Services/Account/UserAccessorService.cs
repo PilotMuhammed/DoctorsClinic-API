@@ -6,40 +6,29 @@ namespace DoctorsClinic.Core.Services.Account
 {
     public class UserAccessorService : IUserAccessorService
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IHttpContextAccessor _accessor;
+        public UserAccessorService(IHttpContextAccessor accessor)
+        {
+            _accessor = accessor ?? throw new ArgumentNullException(nameof(accessor));
+        }
 
-        public UserAccessorService(IHttpContextAccessor httpContextAccessor)
-        {
-            _httpContextAccessor = httpContextAccessor;
-        }
-        public int UserId
+        public Guid UserId
         {
             get
             {
-                var idClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                return int.TryParse(idClaim, out var id) ? id : 0;
+                var mar = _accessor.HttpContext!.User.Claims
+                    .Where(f => f.Type == ClaimTypes.NameIdentifier).Select(f => f.Value).FirstOrDefault();
+                return string.IsNullOrWhiteSpace(mar) ? Guid.Empty : new Guid(mar);
             }
         }
-        public string UserName
-        {
-            get
-            {
-                return _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value ?? "";
-            }
-        }
-        public string RoleName
-        {
-            get
-            {
-                return _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value ?? "";
-            }
-        }
-        public string Permissions
-        {
-            get
-            {
-                return _httpContextAccessor.HttpContext?.User?.FindFirst("PermissionsId")?.Value ?? "";
-            }
-        }
+
+        public string UserName => _accessor.HttpContext!.User.Claims
+            .Where(f => f.Type == ClaimTypes.Name).Select(f => f.Value).FirstOrDefault()!;
+
+        public string RoleName => _accessor.HttpContext!.User.Claims
+            .Where(f => f.Type == ClaimTypes.Role).Select(f => f.Value).FirstOrDefault()!;
+
+        public string Permissions => _accessor.HttpContext!.User.Claims
+            .Where(f => f.Type == "PermissionsId").Select(f => f.Value).FirstOrDefault()!;
     }
 }

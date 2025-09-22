@@ -1,7 +1,5 @@
 ﻿using DoctorsClinic.Core.Dtos;
 using DoctorsClinic.Core.Dtos.Account;
-using DoctorsClinic.Core.Dtos.Permission;
-using DoctorsClinic.Core.Dtos.Role;
 using DoctorsClinic.Core.Extensions;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices.Account;
@@ -9,68 +7,93 @@ using DoctorsClinic.Domain.Helper;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace DoctorsClinic.Core.Services.Account
 {
     public class AuthService : IAuthService
     {
-        private readonly IRepositoryWrapper _repo;
-        private readonly JWTGenerate _jwt;
-
-        public AuthService(IRepositoryWrapper repo, JWTGenerate jwt)
+        private readonly IRepositoryWrapper _wrapper;
+        private readonly JWTGenerate _jwtGenerate;
+        public AuthService(IRepositoryWrapper wrapper, IConfiguration config)
         {
-            _repo = repo;
-            _jwt = jwt;
+            _wrapper = wrapper;
+            _jwtGenerate = new JWTGenerate(config);
         }
 
-        public async Task<ResponseDto<LoginUserResponse>> LoginAsync(LoginUser dto, CancellationToken ct = default)
+        public async Task<ResponseDto<LoginUserResponse>> Login(LoginUser form)
         {
-            if (dto == null)
-                return new ResponseDto<LoginUserResponse>(MsgResponce.Failed, true);
+            var user = await _wrapper.UserRepo.FindByCondition(u => u.UserName.ToLower() == form.UserName.ToLower())
+                .Include(u => u.Role)
+                .Include(u => u.Permissions)
+                .Include(u => u.AccountStatus)
+                .FirstOrDefaultAsync();
 
-            if (string.IsNullOrWhiteSpace(dto.Username))
+            if (user == null || user.IsDeleted)
                 return new ResponseDto<LoginUserResponse>(MsgResponce.User.NotFound, true);
+            if (user.AccountStatus.IsBlocked)
+                return new ResponseDto<LoginUserResponse>(MsgResponce.User.banned, true);
+            if (!user.AccountStatus.IsActive)
+                return new ResponseDto<LoginUserResponse>(MsgResponce.User.NotActive, true);
 
-            if (string.IsNullOrWhiteSpace(dto.Password))
-                return new ResponseDto<LoginUserResponse>(MsgResponce.Password.Wrong, true);
+            var status = user.AccountStatus;
 
-            var user = await _repo.Users
-                .FindByCondition(u => u.Username == dto.Username, track: false)
-                .Include(u => u.Doctor)
-                .FirstOrDefaultAsync(ct);
-
-            if (user == null)
-                return new ResponseDto<LoginUserResponse>(MsgResponce.User.NotFound, true);
-
-            if (!PasswordHasher.CheckPassword(user.PasswordHash, dto.Password))
-                return new ResponseDto<LoginUserResponse>(MsgResponce.Password.Wrong, true);
-
-            var rolePermissions = RolePermissionMap.GetPermissions(user.Role);
-            var userPermissions = new List<string>();
-
-            var tokenDto = new GenerateTokenDto
+            if (status.IsLocked)
             {
-                UserId = user.UserID,
-                UserName = user.Username,
-                RoleName = user.Role.ToString(),
-                RolePermissions = rolePermissions,
-                UserPermissions = userPermissions
+                if (status.LockDateTime.HasValue && status.LockDateTime.Value > DateTime.Now)
+                {
+                    return new ResponseDto<LoginUserResponse>(MsgResponce.AccountStatus.Locked, true);
+                }
+                else
+                {
+                    status.IsLocked = false;
+                    status.FailedCount = 0;
+                    status.LockDateTime = null;
+                    status.Reason = null;
+                    await _wrapper.UserRepo.Update(user);
+                    await _wrapper.SaveAllAsync();
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(user.Password) && !PasswordHasher.CheckPassword(user.Password, form.Password))
+            {
+                status.FailedCount++;
+
+                if (status.FailedCount >= 5)
+                {
+                    status.IsLocked = true;
+                    status.LockDateTime = DateTime.Now.AddMinutes(10);
+                    status.Reason = MsgResponce.Password.Wrong;
+                }
+
+                await _wrapper.UserRepo.Update(user);
+                await _wrapper.SaveAllAsync();
+
+                if (status.IsLocked)
+                    return new ResponseDto<LoginUserResponse>(MsgResponce.AccountStatus.LockedTenMinutes, true);
+
+                return new ResponseDto<LoginUserResponse>(MsgResponce.Password.Wrong, true);
+            }
+
+            if (status.FailedCount > 0)
+            {
+                status.FailedCount = 0;
+                await _wrapper.UserRepo.Update(user);
+                await _wrapper.SaveAllAsync();
+            }
+
+            var tokenData = new GenerateTokenDto
+            {
+                Id = user.Id,
+                User = user,
+                Role = user.Role!,
+                Permissions = user.Permissions!.ToList()
             };
 
-            var token = _jwt.GenerateJwtToken(tokenDto);
+            var userLogin = user.Adapt<LoginUserResponse>();
+            userLogin.Token = _jwtGenerate.GenerateJwtToken(tokenData);
 
-            var response = new LoginUserResponse
-            {
-                UserID = user.UserID,
-                Username = user.Username,
-                Role = new GetRole { Id = (int)user.Role, Name = user.Role.ToString() },
-                DoctorID = user.DoctorID,
-                Token = token,
-                Permissions = (rolePermissions.Concat(userPermissions)).Distinct()
-                    .Select(p => new GetEnum { Name = p }).ToList()
-            };
-
-            return new ResponseDto<LoginUserResponse>(response);
+            return new ResponseDto<LoginUserResponse>(userLogin);
         }
     }
 }

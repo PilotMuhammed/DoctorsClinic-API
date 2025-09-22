@@ -8,7 +8,6 @@ namespace DoctorsClinic.Core.IServices
     public interface IPrescriptionMedicineService : IScopedService
     {
         Task<ResponseDto<PaginationDto<PrescriptionMedicineDto>>> GetAll(PaginationQuery paginationQuery, PrescriptionMedicineFilterDto filter);
-        Task<ResponseDto<IEnumerable<ListDto<int>>>> GetList();
         Task<ResponseDto<PrescriptionMedicineResponseDto>> GetById(int id);
         Task<ResponseDto<PrescriptionMedicineDto>> Add(CreatePrescriptionMedicineDto form);
         Task<ResponseDto<PrescriptionMedicineDto>> Update(int id, UpdatePrescriptionMedicineDto form);

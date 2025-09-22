@@ -3,6 +3,8 @@ using DoctorsClinic.Core.Dtos.Medicines;
 using DoctorsClinic.Core.Extensions;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices;
+using DoctorsClinic.Core.IServices.Account;
+using DoctorsClinic.Domain.Entities;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -11,144 +13,101 @@ namespace DoctorsClinic.Core.Services
 {
     public class MedicineService : IMedicineService
     {
-        private readonly IRepositoryWrapper _repo;
-
-        public MedicineService(IRepositoryWrapper repo)
+        private readonly IRepositoryWrapper _wrapper;
+        private readonly IUserAccessorService _userAccessor;
+        public MedicineService(IRepositoryWrapper wrapper, IUserAccessorService userAccessor)
         {
-            _repo = repo;
+            _wrapper = wrapper;
+            _userAccessor = userAccessor;
         }
 
-        // GetAllAsync 
-        public async Task<ResponseDto<PaginationDto<MedicineDto>>> GetAllAsync(
-            PaginationQuery pagination,
-            MedicineFilterDto filter,
-            CancellationToken ct = default)
+        public async Task<ResponseDto<PaginationDto<MedicineDto>>> GetAll(PaginationQuery paginationQuery, MedicineFilterDto filter)
         {
-            if (pagination == null)
-                return new ResponseDto<PaginationDto<MedicineDto>>(MsgResponce.Failed, true);
+            #region Apply Filter
+            var query = _wrapper.MedicineRepo.GetAll()
+                .Where(me => string.IsNullOrEmpty(filter.Name) || me.Name.ToLower().Contains(filter.Name.ToLower()))
+                .Where(me => string.IsNullOrEmpty(filter.Description) || me.Description.ToLower().Contains(filter.Description.ToLower()))
+                .Where(me => string.IsNullOrEmpty(filter.Type) || me.Type.ToLower().Contains(filter.Type.ToLower()));
+            #endregion
 
-            var query = _repo.Medicines.GetAll(track: false);
-
-            if (filter != null)
-            {
-                if (!string.IsNullOrWhiteSpace(filter.Name))
-                    query = query.Where(m => m.Name.Contains(filter.Name));
-                if (!string.IsNullOrWhiteSpace(filter.Type))
-                    query = query.Where(m => m.Type == filter.Type);
-            }
-
-            var totalCount = await query.CountAsync(ct);
             var data = await query
-                .ApplyPagging(pagination)
+                .OrderByDescending(me => me.CreatedAt)
+                .ApplyPagging(paginationQuery)
                 .ProjectToType<MedicineDto>()
-                .ToListAsync(ct);
+                .ToListAsync();
 
-            var meta = new PaginationMetadata(totalCount, pagination);
-            var paginated = new PaginationDto<MedicineDto>(data, meta);
+            var count = await query.CountAsync();
+            var metadata = new PaginationMetadata(count, paginationQuery);
 
-            if (!data.Any())
-                return new ResponseDto<PaginationDto<MedicineDto>>(MsgResponce.Medicine.NotFound, true);
-
-            return new ResponseDto<PaginationDto<MedicineDto>>(paginated);
+            return new ResponseDto<PaginationDto<MedicineDto>>(
+                new PaginationDto<MedicineDto>(data, metadata));
         }
 
-        // GetListAsync 
-        public async Task<ResponseDto<IEnumerable<ListDto<int>>>> GetListAsync(CancellationToken ct = default)
+        public async Task<ResponseDto<IEnumerable<ListDto<int>>>> GetList()
         {
-            var ids = await _repo.Medicines.GetAll(track: false)
-                .Select(m => m.MedicineID)
-                .ToListAsync(ct);
+            var query = _wrapper.MedicineRepo.GetAll();
 
-            if (!ids.Any())
-                return new ResponseDto<IEnumerable<ListDto<int>>>(MsgResponce.Medicine.NotFound, true);
-
-            var listDto = new ListDto<int>
-            {
-                Items = ids,
-                TotalCount = ids.Count
-            };
-
-            return new ResponseDto<IEnumerable<ListDto<int>>>(new List<ListDto<int>> { listDto });
+            return new ResponseDto<IEnumerable<ListDto<int>>>(
+                await query.OrderBy(me => me.Name)
+                .Select(me => new ListDto<int>
+                {
+                    Id = me.Id,
+                    Title = me.Name
+                }).ToListAsync()
+            );
         }
 
-        // GetByIdAsync
-        public async Task<ResponseDto<MedicineResponseDto>> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<ResponseDto<MedicineResponseDto>> GetById(int id)
         {
-            if (id <= 0)
-                return new ResponseDto<MedicineResponseDto>(MsgResponce.Medicine.NotFound, true);
+            var medicine = await _wrapper.MedicineRepo.FindByCondition(me => me.Id == id)
+                .Include(me => me.PrescriptionMedicines)
+                .FirstOrDefaultAsync();
 
-            // Get Medicine with Prescription
-            var medicine = await _repo.Medicines.GetWithPrescriptionsAsync(id);
             if (medicine == null)
                 return new ResponseDto<MedicineResponseDto>(MsgResponce.Medicine.NotFound, true);
 
-            var dto = medicine.Adapt<MedicineDto>();
-            var prescriptions = medicine.PrescriptionMedicines?
-                .Select(pm => pm.Adapt<Core.Dtos.PrescriptionMedicines.PrescriptionMedicineDto>())
-                .ToList() ?? new List<Core.Dtos.PrescriptionMedicines.PrescriptionMedicineDto>();
-
-            var response = new MedicineResponseDto
-            {
-                Medicine = dto,
-                PrescriptionMedicines = prescriptions
-            };
-
-            return new ResponseDto<MedicineResponseDto>(response);
+            return new ResponseDto<MedicineResponseDto>(medicine.Adapt<MedicineResponseDto>());
         }
 
-        // CreateAsync
-        public async Task<ResponseDto<MedicineDto>> CreateAsync(CreateMedicineDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<MedicineDto>> Add(CreateMedicineDto form)
         {
-            if (dto == null)
-                return new ResponseDto<MedicineDto>(MsgResponce.Failed, true);
+            var medicine = form.Adapt<Medicine>();
+            medicine.CreatorId = _userAccessor.UserId;
+            medicine.CreatedAt = DateTime.Now;
 
-            if (string.IsNullOrWhiteSpace(dto.Name))
-                return new ResponseDto<MedicineDto>("Medicine name is required.", true);
+            await _wrapper.MedicineRepo.Insert(medicine);
+            await _wrapper.SaveAllAsync();
 
+            medicine = await _wrapper.MedicineRepo.FindByCondition(me => me.Id == medicine.Id)
+                .FirstOrDefaultAsync();
 
-            var medicine = dto.Adapt<Domain.Entities.Medicine>();
-            await _repo.Medicines.AddAsync(medicine);
-            await _repo.SaveChangesAsync();
-
-            var resultDto = medicine.Adapt<MedicineDto>();
-            return new ResponseDto<MedicineDto>(resultDto);
+            return new ResponseDto<MedicineDto>(medicine.Adapt<MedicineDto>());
         }
 
-        // UpdateAsync
-        public async Task<ResponseDto<MedicineDto>> UpdateAsync(int id, UpdateMedicineDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<MedicineDto>> Update(int id, UpdateMedicineDto form)
         {
-            if (id <= 0 || dto == null)
-                return new ResponseDto<MedicineDto>(MsgResponce.Failed, true);
-
-            var medicine = await _repo.Medicines.GetByIdAsync(id, track: true);
+            var medicine = await _wrapper.MedicineRepo.FindByCondition(me => me.Id == id)
+                .FirstOrDefaultAsync();
             if (medicine == null)
                 return new ResponseDto<MedicineDto>(MsgResponce.Medicine.NotFound, true);
 
-            if (!string.IsNullOrWhiteSpace(dto.Description))
-                medicine.Description = dto.Description;
-            if (!string.IsNullOrWhiteSpace(dto.Type))
-                medicine.Type = dto.Type;
+            var saveMedicine = form.Adapt(medicine);
+            saveMedicine.ModifierId = _userAccessor.UserId;
+            saveMedicine.ModifieAt = DateTime.Now;
 
-            _repo.Medicines.Update(medicine);
-            await _repo.SaveChangesAsync();
-
-            var resultDto = medicine.Adapt<MedicineDto>();
-            return new ResponseDto<MedicineDto>(resultDto);
+            await _wrapper.MedicineRepo.Update(saveMedicine);
+            return new ResponseDto<MedicineDto>(saveMedicine.Adapt<MedicineDto>());
         }
 
-        // DeleteAsync 
-        public async Task<ResponseDto<bool>> DeleteAsync(int id, CancellationToken ct = default)
+        public async Task<ResponseDto<bool>> Delete(int id)
         {
-            if (id <= 0)
-                return new ResponseDto<bool>(MsgResponce.Medicine.NotFound, true);
-
-            var medicine = await _repo.Medicines.GetByIdAsync(id, track: true);
+            var medicine = await _wrapper.MedicineRepo.FindItemByCondition(me => me.Id == id);
             if (medicine == null)
                 return new ResponseDto<bool>(MsgResponce.Medicine.NotFound, true);
 
-            _repo.Medicines.Remove(medicine);
-            await _repo.SaveChangesAsync();
-
+            medicine.DeleterId = _userAccessor.UserId;
+            await _wrapper.MedicineRepo.Delete(id);
+            await _wrapper.SaveAllAsync();
             return new ResponseDto<bool>(true);
         }
     }

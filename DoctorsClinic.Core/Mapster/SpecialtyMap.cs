@@ -14,7 +14,7 @@ namespace DoctorsClinic.Core.Mapster
 
             TypeAdapterConfig<Specialty, SpecialtyResponseDto>.NewConfig()
                 .Map(dest => dest.Specialty, src => src.Adapt<SpecialtyDto>()) 
-                .Map(dest => dest.Doctors, src => src.Doctors.Adapt<List<DoctorDto>>()); 
+                .Map(dest => dest.Doctors, src => src.Doctors.Adapt<List<DoctorDto>>());
 
             TypeAdapterConfig<Specialty, SpecialtyDto>.NewConfig();
 

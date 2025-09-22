@@ -17,7 +17,9 @@ namespace DoctorsClinic.Core.Mapster
                 .Map(dest => dest.Patient, src => src.Patient.Adapt<PatientDto>())
                 .Map(dest => dest.Doctor, src => src.Doctor.Adapt<DoctorDto>());
 
-            TypeAdapterConfig<MedicalRecord, MedicalRecordDto>.NewConfig();
+            TypeAdapterConfig<MedicalRecord, MedicalRecordDto>.NewConfig()
+                .Map(dest => dest.PatientName, src => src.Patient!.FullName)
+                .Map(dest => dest.DoctorName, src => src.Doctor!.FullName);
 
             TypeAdapterConfig<UpdateMedicalRecordDto, MedicalRecord>.NewConfig()
                 .IgnoreIf((src, dest) => src.PatientID == null, dest => dest.PatientID)

@@ -22,7 +22,9 @@ namespace DoctorsClinic.Core.Mapster
                 .Map(dest => dest.MedicalRecords, src => src.MedicalRecords.Adapt<List<MedicalRecordDto>>())
                 .Map(dest => dest.Prescriptions, src => src.Prescriptions.Adapt<List<PrescriptionDto>>());
 
-            TypeAdapterConfig<Doctor, DoctorDto>.NewConfig();
+            TypeAdapterConfig<Doctor, DoctorDto>.NewConfig()
+                .Map(dest => dest.SpecialtyName, src => src.Specialty!.Name)
+                .Map(dest => dest.UserName, src => src.User!.UserName);
 
             TypeAdapterConfig<UpdateDoctorDto, Doctor>.NewConfig()
                 .IgnoreIf((src, dest) => string.IsNullOrWhiteSpace(src.FullName), dest => dest.FullName)

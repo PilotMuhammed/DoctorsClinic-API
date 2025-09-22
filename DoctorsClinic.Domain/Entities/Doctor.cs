@@ -7,7 +7,7 @@ namespace DoctorsClinic.Domain.Entities
         public int SpecialtyID { get; set; }
         public string? Phone { get; set; }
         public string? Email { get; set; }
-        public int? UserID { get; set; }
+        public Guid? UserID { get; set; }
 
         public Specialty? Specialty { get; set; }
         public User? User { get; set; }

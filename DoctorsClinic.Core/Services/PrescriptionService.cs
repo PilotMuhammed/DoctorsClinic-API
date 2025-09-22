@@ -3,6 +3,8 @@ using DoctorsClinic.Core.Dtos.Prescriptions;
 using DoctorsClinic.Core.Extensions;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices;
+using DoctorsClinic.Core.IServices.Account;
+using DoctorsClinic.Domain.Entities;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -11,186 +13,124 @@ namespace DoctorsClinic.Core.Services
 {
     public class PrescriptionService : IPrescriptionService
     {
-        private readonly IRepositoryWrapper _repo;
-
-        public PrescriptionService(IRepositoryWrapper repo)
+        private readonly IRepositoryWrapper _wrapper;
+        private readonly IUserAccessorService _userAccessor;
+        public PrescriptionService(IRepositoryWrapper wrapper, IUserAccessorService userAccessor)
         {
-            _repo = repo;
+            _wrapper = wrapper;
+            _userAccessor = userAccessor;
         }
 
-        // GetAllAsync
-        public async Task<ResponseDto<PaginationDto<PrescriptionDto>>> GetAllAsync(
-            PaginationQuery pagination,
-            PrescriptionFilterDto filter,
-            CancellationToken ct = default)
+        public async Task<ResponseDto<PaginationDto<PrescriptionDto>>> GetAll(PaginationQuery paginationQuery, PrescriptionFilterDto filter)
         {
-            if (pagination == null)
-                return new ResponseDto<PaginationDto<PrescriptionDto>>(MsgResponce.Failed, true);
+            #region Apply Filter
+            var query = _wrapper.PrescriptionRepo.GetAll()
+                .Include(pr => pr.Appointment)
+                .Include(pr => pr.Doctor)
+                .Include(pr => pr.Patient)
+                .Where(pr => !filter.AppointmentID.HasValue || pr.AppointmentID == filter.AppointmentID)
+                .Where(pr => !filter.DoctorID.HasValue || pr.DoctorID == filter.DoctorID)
+                .Where(pr => !filter.PatientID.HasValue || pr.PatientID == filter.PatientID)
+                .Where(pr => string.IsNullOrEmpty(filter.Notes) || pr.Notes!.ToLower().Contains(filter.Notes.ToLower()));
+            #endregion
 
-            var query = _repo.Prescriptions.GetAll(track: false);
-
-            if (filter != null)
-            {
-                if (filter.DoctorID.HasValue)
-                    query = query.Where(p => p.DoctorID == filter.DoctorID.Value);
-                if (filter.PatientID.HasValue)
-                    query = query.Where(p => p.PatientID == filter.PatientID.Value);
-                if (filter.DateFrom.HasValue)
-                    query = query.Where(p => p.Date >= filter.DateFrom.Value);
-                if (filter.DateTo.HasValue)
-                    query = query.Where(p => p.Date <= filter.DateTo.Value);
-            }
-
-            var totalCount = await query.CountAsync(ct);
             var data = await query
-                .ApplyPagging(pagination)
+                .OrderByDescending(pr => pr.CreatedAt)
+                .ApplyPagging(paginationQuery)
                 .ProjectToType<PrescriptionDto>()
-                .ToListAsync(ct);
+                .ToListAsync();
 
-            var meta = new PaginationMetadata(totalCount, pagination);
-            var paginated = new PaginationDto<PrescriptionDto>(data, meta);
+            var count = await query.CountAsync();
+            var metadata = new PaginationMetadata(count, paginationQuery);
 
-            if (!data.Any())
-                return new ResponseDto<PaginationDto<PrescriptionDto>>(MsgResponce.Failed, true);
-
-            return new ResponseDto<PaginationDto<PrescriptionDto>>(paginated);
+            return new ResponseDto<PaginationDto<PrescriptionDto>>(
+                new PaginationDto<PrescriptionDto>(data, metadata));
         }
 
-        // GetByAppointmentAsync 
-        public async Task<ResponseDto<List<PrescriptionDto>>> GetByAppointmentAsync(int appointmentId, CancellationToken ct = default)
+        public async Task<ResponseDto<PrescriptionResponseDto>> GetById(int id)
         {
-            if (appointmentId <= 0)
-                return new ResponseDto<List<PrescriptionDto>>(MsgResponce.Failed, true);
+            var prescription = await _wrapper.PrescriptionRepo.FindByCondition(pr => pr.Id == id)
+                .Include(pr => pr.Appointment)
+                .Include(pr => pr.Doctor)
+                .Include(pr => pr.Patient)
+                .Include(pr => pr.PrescriptionMedicines)
+                .FirstOrDefaultAsync();
 
-            var prescriptions = await _repo.Prescriptions
-                .FindByCondition(p => p.AppointmentID == appointmentId, track: false)
-                .ProjectToType<PrescriptionDto>()
-                .ToListAsync(ct);
-
-            if (!prescriptions.Any())
-                return new ResponseDto<List<PrescriptionDto>>(MsgResponce.Failed, true);
-
-            return new ResponseDto<List<PrescriptionDto>>(prescriptions);
-        }
-
-        // GetByIdAsync
-        public async Task<ResponseDto<PrescriptionResponseDto>> GetByIdAsync(int id, CancellationToken ct = default)
-        {
-            if (id <= 0)
-                return new ResponseDto<PrescriptionResponseDto>(MsgResponce.Failed, true);
-
-            var prescription = await _repo.Prescriptions.GetWithAllDetailsAsync(id);
             if (prescription == null)
-                return new ResponseDto<PrescriptionResponseDto>(MsgResponce.Failed, true);
+                return new ResponseDto<PrescriptionResponseDto>(MsgResponce.Prescription.NotFound, true);
 
-            var dto = prescription.Adapt<PrescriptionDto>();
-            var appointmentDto = prescription.Appointment?.Adapt<Core.Dtos.Appointments.AppointmentDto>();
-            var doctorDto = prescription.Doctor?.Adapt<Core.Dtos.Doctors.DoctorDto>();
-            var patientDto = prescription.Patient?.Adapt<Core.Dtos.Patients.PatientDto>();
-            var prescriptionMedicines = prescription.PrescriptionMedicines?
-                .Select(pm => pm.Adapt<Core.Dtos.PrescriptionMedicines.PrescriptionMedicineDto>()).ToList()
-                ?? new List<Core.Dtos.PrescriptionMedicines.PrescriptionMedicineDto>();
-
-            var response = new PrescriptionResponseDto
-            {
-                Prescription = dto,
-                Appointment = appointmentDto,
-                Doctor = doctorDto,
-                Patient = patientDto,
-                PrescriptionMedicines = prescriptionMedicines
-            };
-
-            return new ResponseDto<PrescriptionResponseDto>(response);
+            return new ResponseDto<PrescriptionResponseDto>(prescription.Adapt<PrescriptionResponseDto>());
         }
 
-        // CreateAsync
-        public async Task<ResponseDto<PrescriptionDto>> CreateAsync(CreatePrescriptionDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<PrescriptionDto>> Add(CreatePrescriptionDto form)
         {
-            if (dto == null)
-                return new ResponseDto<PrescriptionDto>(MsgResponce.Failed, true);
-
-            var appointment = await _repo.Appointments.GetByIdAsync(dto.AppointmentID, track: false);
+            var appointment = await _wrapper.AppointmentRepo.FindItemByCondition(ap => ap.Id == form.AppointmentID);
             if (appointment == null)
-                return new ResponseDto<PrescriptionDto>("Appointment not found.", true);
+                return new ResponseDto<PrescriptionDto>(MsgResponce.Appointment.NotFound, true);
 
-            var doctor = await _repo.Doctors.GetByIdAsync(dto.DoctorID, track: false);
+            var doctor = await _wrapper.DoctorRepo.FindItemByCondition(d => d.Id == form.DoctorID);
             if (doctor == null)
-                return new ResponseDto<PrescriptionDto>("Doctor not found.", true);
+                return new ResponseDto<PrescriptionDto>(MsgResponce.Doctor.NotFound, true);
 
-            var patient = await _repo.Patients.GetByIdAsync(dto.PatientID, track: false);
+            var patient = await _wrapper.PatientRepo.FindItemByCondition(pa => pa.Id == form.DoctorID);
             if (patient == null)
-                return new ResponseDto<PrescriptionDto>("Patient not found.", true);
+                return new ResponseDto<PrescriptionDto>(MsgResponce.Patient.NotFound, true);
 
-            var prescription = dto.Adapt<Domain.Entities.Prescription>();
-            await _repo.Prescriptions.AddAsync(prescription);
-            await _repo.SaveChangesAsync();
+            var prescription = form.Adapt<Prescription>();
+            prescription.CreatorId = _userAccessor.UserId;
+            prescription.CreatedAt = DateTime.Now;
 
-            var resultDto = prescription.Adapt<PrescriptionDto>();
-            return new ResponseDto<PrescriptionDto>(resultDto);
+            await _wrapper.PrescriptionRepo.Insert(prescription);
+            await _wrapper.SaveAllAsync();
+
+            prescription = await _wrapper.PrescriptionRepo.FindByCondition(pr => pr.Id == prescription.Id)
+                .Include(pr => pr.Appointment)
+                .Include(pr => pr.Doctor)
+                .Include(pr => pr.Patient)
+                .FirstOrDefaultAsync();
+
+            return new ResponseDto<PrescriptionDto>(prescription.Adapt<PrescriptionDto>());
         }
 
-        // UpdateAsync 
-        public async Task<ResponseDto<PrescriptionDto>> UpdateAsync(int id, UpdatePrescriptionDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<PrescriptionDto>> Update(int id, UpdatePrescriptionDto form)
         {
-            if (id <= 0 || dto == null)
-                return new ResponseDto<PrescriptionDto>(MsgResponce.Failed, true);
-
-            var prescription = await _repo.Prescriptions.GetByIdAsync(id, track: true);
+            var prescription = await _wrapper.PrescriptionRepo.FindByCondition(pr => pr.Id == id)
+                .Include(pr => pr.Appointment)
+                .Include(pr => pr.Doctor)
+                .Include(pr => pr.Patient)
+                .FirstOrDefaultAsync();
             if (prescription == null)
-                return new ResponseDto<PrescriptionDto>(MsgResponce.Failed, true);
+                return new ResponseDto<PrescriptionDto>(MsgResponce.Prescription.NotFound, true);
 
-            if (dto.AppointmentID.HasValue && dto.AppointmentID.Value > 0 && dto.AppointmentID != prescription.AppointmentID)
-            {
-                var appointment = await _repo.Appointments.GetByIdAsync(dto.AppointmentID.Value, track: false);
-                if (appointment == null)
-                    return new ResponseDto<PrescriptionDto>("Appointment not found.", true);
+            var appointment = await _wrapper.AppointmentRepo.FindItemByCondition(ap => ap.Id == form.AppointmentID);
+            if (appointment == null)
+                return new ResponseDto<PrescriptionDto>(MsgResponce.Appointment.NotFound, true);
 
-                prescription.AppointmentID = dto.AppointmentID.Value;
-            }
+            var doctor = await _wrapper.DoctorRepo.FindItemByCondition(d => d.Id == form.DoctorID);
+            if (doctor == null)
+                return new ResponseDto<PrescriptionDto>(MsgResponce.Doctor.NotFound, true);
 
-            if (dto.DoctorID.HasValue && dto.DoctorID.Value > 0 && dto.DoctorID != prescription.DoctorID)
-            {
-                var doctor = await _repo.Doctors.GetByIdAsync(dto.DoctorID.Value, track: false);
-                if (doctor == null)
-                    return new ResponseDto<PrescriptionDto>("Doctor not found.", true);
+            var patient = await _wrapper.PatientRepo.FindItemByCondition(pa => pa.Id == form.DoctorID);
+            if (patient == null)
+                return new ResponseDto<PrescriptionDto>(MsgResponce.Patient.NotFound, true);
 
-                prescription.DoctorID = dto.DoctorID.Value;
-            }
+            var savePrescription = form.Adapt(prescription);
+            savePrescription.ModifierId = _userAccessor.UserId;
+            savePrescription.ModifieAt = DateTime.Now;
 
-            if (dto.PatientID.HasValue && dto.PatientID.Value > 0 && dto.PatientID != prescription.PatientID)
-            {
-                var patient = await _repo.Patients.GetByIdAsync(dto.PatientID.Value, track: false);
-                if (patient == null)
-                    return new ResponseDto<PrescriptionDto>("Patient not found.", true);
-
-                prescription.PatientID = dto.PatientID.Value;
-            }
-
-            if (dto.Date.HasValue)
-                prescription.Date = dto.Date.Value;
-            if (!string.IsNullOrWhiteSpace(dto.Notes))
-                prescription.Notes = dto.Notes;
-
-            _repo.Prescriptions.Update(prescription);
-            await _repo.SaveChangesAsync();
-
-            var resultDto = prescription.Adapt<PrescriptionDto>();
-            return new ResponseDto<PrescriptionDto>(resultDto);
+            await _wrapper.PrescriptionRepo.Update(savePrescription);
+            return new ResponseDto<PrescriptionDto>(savePrescription.Adapt<PrescriptionDto>());
         }
 
-        // DeleteAsync
-        public async Task<ResponseDto<bool>> DeleteAsync(int id, CancellationToken ct = default)
+        public async Task<ResponseDto<bool>> Delete(int id)
         {
-            if (id <= 0)
-                return new ResponseDto<bool>(MsgResponce.Failed, true);
-
-            var prescription = await _repo.Prescriptions.GetByIdAsync(id, track: true);
+            var prescription = await _wrapper.PrescriptionRepo.FindItemByCondition(pr => pr.Id == id);
             if (prescription == null)
-                return new ResponseDto<bool>(MsgResponce.Failed, true);
+                return new ResponseDto<bool>(MsgResponce.Prescription.NotFound, true);
 
-            _repo.Prescriptions.Remove(prescription);
-            await _repo.SaveChangesAsync();
-
+            prescription.DeleterId = _userAccessor.UserId;
+            await _wrapper.PrescriptionRepo.Delete(id);
+            await _wrapper.SaveAllAsync();
             return new ResponseDto<bool>(true);
         }
     }

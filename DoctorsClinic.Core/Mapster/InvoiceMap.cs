@@ -20,7 +20,8 @@ namespace DoctorsClinic.Core.Mapster
                 .Map(dest => dest.Appointment, src => src.Appointment.Adapt<AppointmentDto>())
                 .Map(dest => dest.Payments, src => src.Payments.Adapt<List<PaymentDto>>());
 
-            TypeAdapterConfig<Invoice, InvoiceDto>.NewConfig();
+            TypeAdapterConfig<Invoice, InvoiceDto>.NewConfig()
+                .Map(dest => dest.PatientName, src => src.Patient!.FullName);
 
             TypeAdapterConfig<UpdateInvoiceDto, Invoice>.NewConfig()
                 .IgnoreIf((src, dest) => src.PatientID == null, dest => dest.PatientID)

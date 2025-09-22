@@ -2,7 +2,7 @@
 
 namespace DoctorsClinic.Domain.Entities
 {
-    public class User : BaseEntity<int>
+    public class User : BaseEntity<Guid>
     {
         public string FullName { get; set; }
         public string UserName { get; set; }

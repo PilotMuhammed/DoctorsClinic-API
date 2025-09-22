@@ -3,6 +3,8 @@ using DoctorsClinic.Core.Dtos.Specialties;
 using DoctorsClinic.Core.Extensions;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices;
+using DoctorsClinic.Core.IServices.Account;
+using DoctorsClinic.Domain.Entities;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -11,147 +13,100 @@ namespace DoctorsClinic.Core.Services
 {
     public class SpecialtyService : ISpecialtyService
     {
-        private readonly IRepositoryWrapper _repo;
-
-        public SpecialtyService(IRepositoryWrapper repo)
+        private readonly IRepositoryWrapper _wrapper;
+        private readonly IUserAccessorService _userAccessor;
+        public SpecialtyService(IRepositoryWrapper wrapper, IUserAccessorService userAccessor)
         {
-            _repo = repo;
+            _wrapper = wrapper;
+            _userAccessor = userAccessor;
         }
 
-        // GetAllAsync 
-        public async Task<ResponseDto<PaginationDto<SpecialtyDto>>> GetAllAsync(
-            PaginationQuery pagination,
-            SpecialtyFilterDto filter,
-            CancellationToken ct = default)
+        public async Task<ResponseDto<PaginationDto<SpecialtyDto>>> GetAll(PaginationQuery paginationQuery, SpecialtyFilterDto filter)
         {
-            if (pagination == null)
-                return new ResponseDto<PaginationDto<SpecialtyDto>>(MsgResponce.Failed, true);
+            #region Apply Filter
+            var query = _wrapper.SpecialtyRepo.GetAll()
+                .Where(sp => string.IsNullOrEmpty(filter.Name) || sp.Name.ToLower().Contains(filter.Name.ToLower()))
+                .Where(sp => string.IsNullOrEmpty(filter.Description) || sp.Description!.ToLower().Contains(filter.Description.ToLower()));
+            #endregion
 
-            var query = _repo.Specialties.GetAll(track: false);
-
-            if (filter != null && !string.IsNullOrWhiteSpace(filter.Name))
-                query = query.Where(s => s.Name.Contains(filter.Name));
-
-            var totalCount = await query.CountAsync(ct);
             var data = await query
-                .ApplyPagging(pagination)
+                .OrderByDescending(sp => sp.CreatedAt)
+                .ApplyPagging(paginationQuery)
                 .ProjectToType<SpecialtyDto>()
-                .ToListAsync(ct);
+                .ToListAsync();
 
-            var meta = new PaginationMetadata(totalCount, pagination);
-            var paginated = new PaginationDto<SpecialtyDto>(data, meta);
+            var count = await query.CountAsync();
+            var metadata = new PaginationMetadata(count, paginationQuery);
 
-            if (!data.Any())
-                return new ResponseDto<PaginationDto<SpecialtyDto>>(MsgResponce.Failed, true);
-
-            return new ResponseDto<PaginationDto<SpecialtyDto>>(paginated);
+            return new ResponseDto<PaginationDto<SpecialtyDto>>(
+                new PaginationDto<SpecialtyDto>(data, metadata));
         }
 
-        // GetListAsync
-        public async Task<ResponseDto<IEnumerable<ListDto<int>>>> GetListAsync(CancellationToken ct = default)
+        public async Task<ResponseDto<IEnumerable<ListDto<int>>>> GetList()
         {
-            var ids = await _repo.Specialties.GetAll(track: false)
-                .Select(s => s.SpecialtyID)
-                .ToListAsync(ct);
+            var query = _wrapper.SpecialtyRepo.GetAll();
 
-            if (!ids.Any())
-                return new ResponseDto<IEnumerable<ListDto<int>>>(MsgResponce.Failed, true);
-
-            var listDto = new ListDto<int>
-            {
-                Items = ids,
-                TotalCount = ids.Count
-            };
-
-            return new ResponseDto<IEnumerable<ListDto<int>>>(new List<ListDto<int>> { listDto });
+            return new ResponseDto<IEnumerable<ListDto<int>>>(
+                await query.OrderBy(sp => sp.Name)
+                .Select(sp => new ListDto<int>
+                {
+                    Id = sp.Id,
+                    Title = sp.Name
+                }).ToListAsync()
+            );
         }
 
-        // GetByIdAsync 
-        public async Task<ResponseDto<SpecialtyResponseDto>> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<ResponseDto<SpecialtyResponseDto>> GetById(int id)
         {
-            if (id <= 0)
-                return new ResponseDto<SpecialtyResponseDto>(MsgResponce.Failed, true);
+            var specialty = await _wrapper.SpecialtyRepo.FindByCondition(sp => sp.Id == id)
+                .Include(sp => sp.Doctors)
+                .FirstOrDefaultAsync();
 
-            var specialty = await _repo.Specialties.GetWithDoctorsAsync(id);
             if (specialty == null)
-                return new ResponseDto<SpecialtyResponseDto>(MsgResponce.Failed, true);
+                return new ResponseDto<SpecialtyResponseDto>(MsgResponce.Specialty.NotFound, true);
 
-            var dto = specialty.Adapt<SpecialtyDto>();
-            var doctors = specialty.Doctors?
-                .Select(d => d.Adapt<Core.Dtos.Doctors.DoctorDto>())
-                .ToList() ?? new List<Core.Dtos.Doctors.DoctorDto>();
-
-            var response = new SpecialtyResponseDto
-            {
-                Specialty = dto,
-                Doctors = doctors
-            };
-
-            return new ResponseDto<SpecialtyResponseDto>(response);
+            return new ResponseDto<SpecialtyResponseDto>(specialty.Adapt<SpecialtyResponseDto>());
         }
 
-        // CreateAsync 
-        public async Task<ResponseDto<SpecialtyDto>> CreateAsync(CreateSpecialtyDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<SpecialtyDto>> Add(CreateSpecialtyDto form)
         {
-            if (dto == null)
-                return new ResponseDto<SpecialtyDto>(MsgResponce.Failed, true);
+            var specialty = form.Adapt<Specialty>();
+            specialty.CreatorId = _userAccessor.UserId;
+            specialty.CreatedAt = DateTime.Now;
 
-            if (string.IsNullOrWhiteSpace(dto.Name))
-                return new ResponseDto<SpecialtyDto>("Specialty name is required.", true);
+            await _wrapper.SpecialtyRepo.Insert(specialty);
+            await _wrapper.SaveAllAsync();
 
-            var specialty = dto.Adapt<Domain.Entities.Specialty>();
-            await _repo.Specialties.AddAsync(specialty);
-            await _repo.SaveChangesAsync();
+            specialty = await _wrapper.SpecialtyRepo.FindByCondition(sp => sp.Id == specialty.Id)
+                .FirstOrDefaultAsync();
 
-            var resultDto = specialty.Adapt<SpecialtyDto>();
-            return new ResponseDto<SpecialtyDto>(resultDto);
+            return new ResponseDto<SpecialtyDto>(specialty.Adapt<SpecialtyDto>());
         }
 
-        // UpdateAsync 
-        public async Task<ResponseDto<SpecialtyDto>> UpdateAsync(int id, UpdateSpecialtyDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<SpecialtyDto>> Update(int id, UpdateSpecialtyDto form)
         {
-            if (id <= 0 || dto == null)
-                return new ResponseDto<SpecialtyDto>(MsgResponce.Failed, true);
-
-            var specialty = await _repo.Specialties.GetByIdAsync(id, track: true);
+            var specialty = await _wrapper.SpecialtyRepo.FindByCondition(sp => sp.Id == id)
+                .FirstOrDefaultAsync();
             if (specialty == null)
-                return new ResponseDto<SpecialtyDto>(MsgResponce.Failed, true);
+                return new ResponseDto<SpecialtyDto>(MsgResponce.Specialty.NotFound, true);
 
-            if (!string.IsNullOrWhiteSpace(dto.Name) && dto.Name != specialty.Name)
-            {
-                var exists = await _repo.Specialties
-                    .FindByCondition(s => s.Name == dto.Name && s.SpecialtyID != id, track: false)
-                    .AnyAsync(ct);
+            var saveSpecialty = form.Adapt(specialty);
+            saveSpecialty.ModifierId = _userAccessor.UserId;
+            saveSpecialty.ModifieAt = DateTime.Now;
 
-                if (exists)
-                    return new ResponseDto<SpecialtyDto>("Specialty name already exists.", true);
-
-                specialty.Name = dto.Name;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.Description))
-                specialty.Description = dto.Description;
-
-            _repo.Specialties.Update(specialty);
-            await _repo.SaveChangesAsync();
-
-            var resultDto = specialty.Adapt<SpecialtyDto>();
-            return new ResponseDto<SpecialtyDto>(resultDto);
+            await _wrapper.SpecialtyRepo.Update(saveSpecialty);
+            return new ResponseDto<SpecialtyDto>(saveSpecialty.Adapt<SpecialtyDto>());
         }
 
-        // DeleteAsync
-        public async Task<ResponseDto<bool>> DeleteAsync(int id, CancellationToken ct = default)
+        public async Task<ResponseDto<bool>> Delete(int id)
         {
-            if (id <= 0)
-                return new ResponseDto<bool>(MsgResponce.Failed, true);
-
-            var specialty = await _repo.Specialties.GetByIdAsync(id, track: true);
+            var specialty = await _wrapper.SpecialtyRepo.FindItemByCondition(sp => sp.Id == id);
             if (specialty == null)
-                return new ResponseDto<bool>(MsgResponce.Failed, true);
+                return new ResponseDto<bool>(MsgResponce.Specialty.NotFound, true);
 
-            _repo.Specialties.Remove(specialty);
-            await _repo.SaveChangesAsync();
-
+            specialty.DeleterId = _userAccessor.UserId;
+            await _wrapper.SpecialtyRepo.Delete(id);
+            await _wrapper.SaveAllAsync();
             return new ResponseDto<bool>(true);
         }
     }

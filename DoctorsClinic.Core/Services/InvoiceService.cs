@@ -3,217 +3,129 @@ using DoctorsClinic.Core.Dtos.Invoices;
 using DoctorsClinic.Core.Extensions;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices;
+using DoctorsClinic.Core.IServices.Account;
+using DoctorsClinic.Domain.Entities;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
-using DoctorsClinic.Domain.Enums;
 
 namespace DoctorsClinic.Core.Services
 {
     public class InvoiceService : IInvoiceService
     {
-        private readonly IRepositoryWrapper _repo;
-
-        public InvoiceService(IRepositoryWrapper repo)
+        private readonly IRepositoryWrapper _wrapper;
+        private readonly IUserAccessorService _userAccessor;
+        public InvoiceService(IRepositoryWrapper wrapper, IUserAccessorService userAccessor)
         {
-            _repo = repo;
+            _wrapper = wrapper;
+            _userAccessor = userAccessor;
         }
 
-        // GetAllAsync 
-        public async Task<ResponseDto<PaginationDto<InvoiceDto>>> GetAllAsync(
-            PaginationQuery pagination,
-            InvoiceFilterDto filter,
-            CancellationToken ct = default)
+        public async Task<ResponseDto<PaginationDto<InvoiceDto>>> GetAll(PaginationQuery paginationQuery, InvoiceFilterDto filter)
         {
-            if (pagination == null)
-                return new ResponseDto<PaginationDto<InvoiceDto>>(MsgResponce.Failed, true);
+            #region Apply Filter
+            var query = _wrapper.InvoiceRepo.GetAll()
+                .Include(i => i.Patient)
+                .Include(i => i.Appointment)
+                .Where(i => !filter.PatientID.HasValue || i.PatientID == filter.PatientID)
+                .Where(i => !filter.AppointmentID.HasValue || i.AppointmentID == filter.AppointmentID)
+                .Where(i => !filter.Status.HasValue || i.Status == filter.Status)
+                .Where(i => !filter.Date.HasValue || i.Date == filter.Date)
+                .Where(i => !filter.CreatedAt.HasValue || i.CreatedAt == filter.CreatedAt);
+            #endregion
 
-            var query = _repo.Invoices.GetAll(include: q =>
-                q.Include(i => i.Patient!)
-                 .Include(i => i.Appointment!)
-                 .Include(i => i.Payments!),
-                track: false
-            );
-
-            if (filter != null)
-            {
-                if (filter.PatientID.HasValue)
-                    query = query.Where(i => i.PatientID == filter.PatientID.Value);
-                if (filter.Status != null)
-                    query = query.Where(i => i.Status.ToString() == filter.Status);
-                if (filter.DateFrom.HasValue)
-                    query = query.Where(i => i.Date >= filter.DateFrom.Value);
-                if (filter.DateTo.HasValue)
-                    query = query.Where(i => i.Date <= filter.DateTo.Value);
-            }
-
-            var totalCount = await query.CountAsync(ct);
             var data = await query
-                .ApplyPagging(pagination)
+                .OrderByDescending(i => i.CreatedAt)
+                .ApplyPagging(paginationQuery)
                 .ProjectToType<InvoiceDto>()
-                .ToListAsync(ct);
+                .ToListAsync();
 
-            var meta = new PaginationMetadata(totalCount, pagination);
-            var paginated = new PaginationDto<InvoiceDto>(data, meta);
+            var count = await query.CountAsync();
+            var metadata = new PaginationMetadata(count, paginationQuery);
 
-            if (!data.Any())
-                return new ResponseDto<PaginationDto<InvoiceDto>>(MsgResponce.Invoice.NotFound, true);
-
-            return new ResponseDto<PaginationDto<InvoiceDto>>(paginated);
+            return new ResponseDto<PaginationDto<InvoiceDto>>(
+                new PaginationDto<InvoiceDto>(data, metadata));
         }
 
-        // GetByIdAsync
-        public async Task<ResponseDto<InvoiceResponseDto>> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<ResponseDto<InvoiceResponseDto>> GetById(int id)
         {
-            if (id <= 0)
-                return new ResponseDto<InvoiceResponseDto>(MsgResponce.Invoice.NotFound, true);
-
-            var invoice = await _repo.Invoices.GetByIdAsync(id, include: q =>
-                q.Include(i => i.Patient!)
-                 .Include(i => i.Appointment!)
-                 .Include(i => i.Payments!), track: false);
+            var invoice = await _wrapper.InvoiceRepo.FindByCondition(i => i.Id == id)
+                .Include(i => i.Patient)
+                .Include(i => i.Appointment)
+                .Include(i => i.Payments)
+                .FirstOrDefaultAsync();
 
             if (invoice == null)
                 return new ResponseDto<InvoiceResponseDto>(MsgResponce.Invoice.NotFound, true);
 
-            var dto = invoice.Adapt<InvoiceResponseDto>();
-            return new ResponseDto<InvoiceResponseDto>(dto);
+            return new ResponseDto<InvoiceResponseDto>(invoice.Adapt<InvoiceResponseDto>());
         }
 
-        // GetByPatientAsync 
-        public async Task<ResponseDto<List<InvoiceDto>>> GetByPatientAsync(int patientId, CancellationToken ct = default)
+        public async Task<ResponseDto<InvoiceDto>> Add(CreateInvoiceDto form)
         {
-            if (patientId <= 0)
-                return new ResponseDto<List<InvoiceDto>>(MsgResponce.Patient.NotFound, true);
-
-            var invoices = await _repo.Invoices
-                .FindByCondition(i => i.PatientID == patientId, include: q =>
-                    q.Include(i => i.Appointment!)
-                     .Include(i => i.Payments!), track: false)
-                .ProjectToType<InvoiceDto>()
-                .ToListAsync(ct);
-
-            if (!invoices.Any())
-                return new ResponseDto<List<InvoiceDto>>(MsgResponce.Invoice.NotFound, true);
-
-            return new ResponseDto<List<InvoiceDto>>(invoices);
-        }
-
-        // CreateAsync 
-        public async Task<ResponseDto<InvoiceDto>> CreateAsync(CreateInvoiceDto dto, CancellationToken ct = default)
-        {
-            if (dto == null)
-                return new ResponseDto<InvoiceDto>(MsgResponce.Failed, true);
-
-            var patient = await _repo.Patients.GetByIdAsync(dto.PatientID, track: false);
+            var patient = await _wrapper.PatientRepo.FindItemByCondition(p => p.Id == form.PatientID);
             if (patient == null)
                 return new ResponseDto<InvoiceDto>(MsgResponce.Patient.NotFound, true);
 
-            var appointment = await _repo.Appointments.GetByIdAsync(dto.AppointmentID, track: false);
+            var appointment = await _wrapper.AppointmentRepo.FindItemByCondition(a => a.Id == form.AppointmentID);
             if (appointment == null)
                 return new ResponseDto<InvoiceDto>(MsgResponce.Appointment.NotFound, true);
 
-            var invoice = dto.Adapt<Domain.Entities.Invoice>();
-            await _repo.Invoices.AddAsync(invoice);
-            await _repo.SaveChangesAsync();
+            if(form.TotalAmount <= 0)
+                return new ResponseDto<InvoiceDto>(MsgResponce.AlarmAmounts.WrongEntry, true);
 
-            var resultDto = invoice.Adapt<InvoiceDto>();
-            return new ResponseDto<InvoiceDto>(resultDto);
+            var invoice = form.Adapt<Invoice>();
+            invoice.CreatorId = _userAccessor.UserId;
+            invoice.CreatedAt = DateTime.Now;
+
+            await _wrapper.InvoiceRepo.Insert(invoice);
+            await _wrapper.SaveAllAsync();
+
+            invoice = await _wrapper.InvoiceRepo.FindByCondition(i => i.Id == invoice.Id)
+                .Include(i => i.Patient)
+                .Include(i => i.Appointment)
+                .FirstOrDefaultAsync();
+
+            return new ResponseDto<InvoiceDto>(invoice.Adapt<InvoiceDto>());
         }
 
-        // GenerateForAppointmentAsync 
-        public async Task<ResponseDto<InvoiceDto>> GenerateForAppointmentAsync(int appointmentId, CancellationToken ct = default)
+        public async Task<ResponseDto<InvoiceDto>> Update(int id, UpdateInvoiceDto form)
         {
-            if (appointmentId <= 0)
-                return new ResponseDto<InvoiceDto>(MsgResponce.Appointment.NotFound, true);
+            var invoice = await _wrapper.InvoiceRepo.FindByCondition(i => i.Id == id)
+                .Include(i => i.Patient)
+                .Include(i => i.Appointment)
+                .FirstOrDefaultAsync();
+            if (invoice == null)
+                return new ResponseDto<InvoiceDto>(MsgResponce.Invoice.NotFound, true);
 
-            var appointment = await _repo.Appointments.GetByIdAsync(appointmentId, include: q =>
-                q.Include(a => a.Patient!), track: false);
+            var patient = await _wrapper.PatientRepo.FindItemByCondition(p => p.Id == form.PatientID);
+            if (patient == null)
+                return new ResponseDto<InvoiceDto>(MsgResponce.Patient.NotFound, true);
 
+            var appointment = await _wrapper.AppointmentRepo.FindItemByCondition(a => a.Id == form.AppointmentID);
             if (appointment == null)
                 return new ResponseDto<InvoiceDto>(MsgResponce.Appointment.NotFound, true);
 
+            if (form.TotalAmount <= 0)
+                return new ResponseDto<InvoiceDto>(MsgResponce.AlarmAmounts.WrongEntry, true);
 
-            var invoice = new Domain.Entities.Invoice
-            {
-                PatientID = appointment.PatientID,
-                AppointmentID = appointment.AppointmentID,
-                Date = DateTime.Now,
-                Status = Domain.Enums.InvoiceStatus.Unpaid,
-                TotalAmount = 0 
-            };
+            var saveInvoice = form.Adapt(invoice);
+            saveInvoice.ModifierId = _userAccessor.UserId;
+            saveInvoice.ModifieAt = DateTime.Now;
 
-            await _repo.Invoices.AddAsync(invoice);
-            await _repo.SaveChangesAsync();
-
-            var dto = invoice.Adapt<InvoiceDto>();
-            return new ResponseDto<InvoiceDto>(dto);
+            await _wrapper.InvoiceRepo.Update(saveInvoice);
+            return new ResponseDto<InvoiceDto>(saveInvoice.Adapt<InvoiceDto>());
         }
 
-        // UpdateAsync
-        public async Task<ResponseDto<InvoiceDto>> UpdateAsync(int id, UpdateInvoiceDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<bool>> Delete(int id)
         {
-            if (id <= 0 || dto == null)
-                return new ResponseDto<InvoiceDto>(MsgResponce.Failed, true);
-
-            var invoice = await _repo.Invoices.GetByIdAsync(id, track: true);
-            if (invoice == null)
-                return new ResponseDto<InvoiceDto>(MsgResponce.Invoice.NotFound, true);
-
-            // Update
-            if (dto.TotalAmount.HasValue && dto.TotalAmount.Value > 0)
-                invoice.TotalAmount = dto.TotalAmount.Value;
-
-            if (!string.IsNullOrWhiteSpace(dto.Status))
-            {
-                if (Enum.TryParse<Domain.Enums.InvoiceStatus>(dto.Status, out var statusEnum))
-                    invoice.Status = statusEnum;
-                else
-                    return new ResponseDto<InvoiceDto>("Invalid invoice status.", true);
-            }
-
-            if (dto.Date.HasValue)
-                invoice.Date = dto.Date.Value;
-
-            _repo.Invoices.Update(invoice);
-            await _repo.SaveChangesAsync();
-
-            var resultDto = invoice.Adapt<InvoiceDto>();
-            return new ResponseDto<InvoiceDto>(resultDto);
-        }
-
-        // MarkAsPaidAsync 
-        public async Task<ResponseDto<InvoiceDto>> MarkAsPaidAsync(int invoiceId, CancellationToken ct = default)
-        {
-            if (invoiceId <= 0)
-                return new ResponseDto<InvoiceDto>(MsgResponce.Invoice.NotFound, true);
-
-            var invoice = await _repo.Invoices.GetByIdAsync(invoiceId, track: true);
-            if (invoice == null)
-                return new ResponseDto<InvoiceDto>(MsgResponce.Invoice.NotFound, true);
-
-            invoice.Status = Domain.Enums.InvoiceStatus.Paid;
-
-            _repo.Invoices.Update(invoice);
-            await _repo.SaveChangesAsync();
-
-            var dto = invoice.Adapt<InvoiceDto>();
-            return new ResponseDto<InvoiceDto>(dto);
-        }
-
-        // DeleteAsync 
-        public async Task<ResponseDto<bool>> DeleteAsync(int id, CancellationToken ct = default)
-        {
-            if (id <= 0)
-                return new ResponseDto<bool>(MsgResponce.Invoice.NotFound, true);
-
-            var invoice = await _repo.Invoices.GetByIdAsync(id, track: true);
+            var invoice = await _wrapper.InvoiceRepo.FindItemByCondition(i => i.Id == id);
             if (invoice == null)
                 return new ResponseDto<bool>(MsgResponce.Invoice.NotFound, true);
 
-            _repo.Invoices.Remove(invoice);
-            await _repo.SaveChangesAsync();
-
+            invoice.DeleterId = _userAccessor.UserId;
+            await _wrapper.InvoiceRepo.Delete(id);
+            await _wrapper.SaveAllAsync();
             return new ResponseDto<bool>(true);
         }
     }

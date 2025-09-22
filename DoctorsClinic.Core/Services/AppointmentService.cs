@@ -3,6 +3,8 @@ using DoctorsClinic.Core.Dtos.Appointments;
 using DoctorsClinic.Core.Extensions;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices;
+using DoctorsClinic.Core.IServices.Account;
+using DoctorsClinic.Domain.Entities;
 using DoctorsClinic.Domain.Enums;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Mapster;
@@ -12,247 +14,138 @@ namespace DoctorsClinic.Core.Services
 {
     public class AppointmentService : IAppointmentService
     {
-        private readonly IRepositoryWrapper _repo;
-
-        public AppointmentService(IRepositoryWrapper repo)
+        private readonly IRepositoryWrapper _wrapper;
+        private readonly IUserAccessorService _userAccessor;
+        public AppointmentService(IRepositoryWrapper wrapper, IUserAccessorService userAccessor)
         {
-            _repo = repo;
+            _wrapper = wrapper;
+            _userAccessor = userAccessor;
         }
 
-        // GetAllAsync
-        public async Task<ResponseDto<PaginationDto<AppointmentDto>>> GetAllAsync(
-            PaginationQuery pagination,
-            AppointmentFilterDto filter,
-            CancellationToken ct = default)
+        public async Task<ResponseDto<PaginationDto<AppointmentDto>>> GetAll(PaginationQuery paginationQuery, AppointmentFilterDto filter)
         {
-            if (pagination == null)
-                return new ResponseDto<PaginationDto<AppointmentDto>>(MsgResponce.Failed, true);
+            #region Apply Filter
+            var query = _wrapper.AppointmentRepo.GetAll()
+                .Include(a => a.Doctor)
+                .Include(a => a.Patient)
+                .Where(a => !filter.PatientID.HasValue || a.PatientID == filter.PatientID)
+                .Where(a => !filter.DoctorID.HasValue || a.DoctorID == filter.DoctorID)
+                .Where(a => !filter.AppointmentDate.HasValue || a.AppointmentDate == filter.AppointmentDate)
+                .Where(a => !filter.Status.HasValue || a.Status == filter.Status)
+                .Where(a => string.IsNullOrEmpty(filter.Notes) || a.Notes!.ToLower().Contains(filter.Notes.ToLower()))
+                .Where(a => !filter.CreatedAt.HasValue || a.CreatedAt == filter.CreatedAt);
+            #endregion
 
-            var query = _repo.Appointments.GetAll(include: q =>
-                q.Include(a => a.Doctor!)
-                 .Include(a => a.Patient!),
-                track: false
-            );
-
-            // Apply Filter
-            if (filter != null)
-            {
-                if (filter.DoctorID.HasValue)
-                    query = query.Where(a => a.DoctorID == filter.DoctorID.Value);
-                if (filter.PatientID.HasValue)
-                    query = query.Where(a => a.PatientID == filter.PatientID.Value);
-                if (filter.Status != null)
-                    query = query.Where(a => a.Status.ToString() == filter.Status);
-                if (filter.DateFrom.HasValue)
-                    query = query.Where(a => a.AppointmentDate >= filter.DateFrom.Value);
-                if (filter.DateTo.HasValue)
-                    query = query.Where(a => a.AppointmentDate <= filter.DateTo.Value);
-            }
-
-            var totalCount = await query.CountAsync(ct);
             var data = await query
-                .ApplyPagging(pagination)
+                .OrderByDescending(a => a.CreatedAt)
+                .ApplyPagging(paginationQuery)
                 .ProjectToType<AppointmentDto>()
-                .ToListAsync(ct);
+                .ToListAsync();
 
-            var meta = new PaginationMetadata(totalCount, pagination);
-            var paginated = new PaginationDto<AppointmentDto>(data, meta);
+            var count = await query.CountAsync();
+            var metadata = new PaginationMetadata(count, paginationQuery);
 
-            if (!data.Any())
-                return new ResponseDto<PaginationDto<AppointmentDto>>(MsgResponce.Appointment.NotFound, true);
-
-            return new ResponseDto<PaginationDto<AppointmentDto>>(paginated);
+            return new ResponseDto<PaginationDto<AppointmentDto>>(
+                new PaginationDto<AppointmentDto>(data, metadata));
         }
 
-        // GetByDoctorAsync 
-        public async Task<ResponseDto<List<AppointmentDto>>> GetByDoctorAsync(int doctorId, CancellationToken ct = default)
+        public async Task<ResponseDto<AppointmentResponseDto>> GetById(int id)
         {
-            if (doctorId <= 0)
-                return new ResponseDto<List<AppointmentDto>>(MsgResponce.Doctor.NotFound, true);
-
-            var appointments = await _repo.Appointments
-                .FindByCondition(a => a.DoctorID == doctorId, include: q =>
-                    q.Include(a => a.Patient!), track: false)
-                .ProjectToType<AppointmentDto>()
-                .ToListAsync(ct);
-
-            if (!appointments.Any())
-                return new ResponseDto<List<AppointmentDto>>(MsgResponce.Appointment.NotFound, true);
-
-            return new ResponseDto<List<AppointmentDto>>(appointments);
-        }
-
-        // GetByPatientAsync 
-        public async Task<ResponseDto<List<AppointmentDto>>> GetByPatientAsync(int patientId, CancellationToken ct = default)
-        {
-            if (patientId <= 0)
-                return new ResponseDto<List<AppointmentDto>>(MsgResponce.Patient.NotFound, true);
-
-            var appointments = await _repo.Appointments
-                .FindByCondition(a => a.PatientID == patientId, include: q =>
-                    q.Include(a => a.Doctor!), track: false)
-                .ProjectToType<AppointmentDto>()
-                .ToListAsync(ct);
-
-            if (!appointments.Any())
-                return new ResponseDto<List<AppointmentDto>>(MsgResponce.Appointment.NotFound, true);
-
-            return new ResponseDto<List<AppointmentDto>>(appointments);
-        }
-
-        // IsSlotAvailableAsync 
-        public async Task<ResponseDto<bool>> IsSlotAvailableAsync(
-            int doctorId,
-            DateTime appointmentDate,
-            int? excludeAppointmentId = null,
-            CancellationToken ct = default)
-        {
-            if (doctorId <= 0)
-                return new ResponseDto<bool>(MsgResponce.Doctor.NotFound, true);
-
-            if (appointmentDate == default)
-                return new ResponseDto<bool>("Appointment date is invalid.", true);
-
-            var query = _repo.Appointments.FindByCondition(
-                a => a.DoctorID == doctorId && a.AppointmentDate == appointmentDate,
-                track: false);
-
-            if (excludeAppointmentId.HasValue)
-                query = query.Where(a => a.AppointmentID != excludeAppointmentId.Value);
-
-            var exists = await query.AnyAsync(ct);
-            return new ResponseDto<bool>(!exists);
-        }
-
-        // ChangeStatusAsync 
-        public async Task<ResponseDto<AppointmentDto>> ChangeStatusAsync(
-            int appointmentId,
-            string status,
-            CancellationToken ct = default)
-        {
-            if (appointmentId <= 0)
-                return new ResponseDto<AppointmentDto>(MsgResponce.Appointment.NotFound, true);
-
-            var appointment = await _repo.Appointments.GetByIdAsync(appointmentId, include: q =>
-                q.Include(a => a.Doctor!).Include(a => a.Patient!), track: true);
-
-            if (appointment == null)
-                return new ResponseDto<AppointmentDto>(MsgResponce.Appointment.NotFound, true);
-
-            if (!Enum.TryParse<Domain.Enums.AppointmentStatus>(status, out var statusEnum))
-                return new ResponseDto<AppointmentDto>("Invalid appointment status.", true);
-
-            appointment.Status = statusEnum;
-            _repo.Appointments.Update(appointment);
-            await _repo.SaveChangesAsync();
-
-            var dto = appointment.Adapt<AppointmentDto>();
-            return new ResponseDto<AppointmentDto>(dto);
-        }
-
-        // GetByIdAsync 
-        public async Task<ResponseDto<AppointmentResponseDto>> GetByIdAsync(int id, CancellationToken ct = default)
-        {
-            if (id <= 0)
-                return new ResponseDto<AppointmentResponseDto>(MsgResponce.Appointment.NotFound, true);
-
-            var appointment = await _repo.Appointments.GetByIdAsync(id, include: q =>
-                q.Include(a => a.Doctor!).Include(a => a.Patient!), track: false);
+            var appointment = await _wrapper.AppointmentRepo.FindByCondition(a => a.Id == id)
+                .Include(a => a.Doctor)
+                .Include(a => a.Patient)
+                .Include(a => a.Prescriptions)
+                .Include(a => a.Invoice)
+                .FirstOrDefaultAsync();
 
             if (appointment == null)
                 return new ResponseDto<AppointmentResponseDto>(MsgResponce.Appointment.NotFound, true);
 
-            var dto = appointment.Adapt<AppointmentResponseDto>();
-            return new ResponseDto<AppointmentResponseDto>(dto);
+            return new ResponseDto<AppointmentResponseDto>(appointment.Adapt<AppointmentResponseDto>());
         }
 
-        // CreateAsync 
-        public async Task<ResponseDto<AppointmentDto>> CreateAsync(CreateAppointmentDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<AppointmentDto>> Add(CreateAppointmentDto form)
         {
-            if (dto == null)
-                return new ResponseDto<AppointmentDto>(MsgResponce.Failed, true);
-
-            // Check Doctor 
-            var doctor = await _repo.Doctors.GetByIdAsync(dto.DoctorID, track: false);
-            if (doctor == null)
-                return new ResponseDto<AppointmentDto>(MsgResponce.Doctor.NotFound, true);
-            // Check Patient 
-            var patient = await _repo.Patients.GetByIdAsync(dto.PatientID, track: false);
+            var patient = await _wrapper.PatientRepo.FindItemByCondition(p => p.Id == form.PatientID);
             if (patient == null)
                 return new ResponseDto<AppointmentDto>(MsgResponce.Patient.NotFound, true);
 
-            // Check Appointment
-            var slotAvailableResp = await IsSlotAvailableAsync(dto.DoctorID, dto.AppointmentDate, null, ct);
-            if (!slotAvailableResp.Data)
-                return new ResponseDto<AppointmentDto>("Appointment slot is already booked.", true);
+            var doctor = await _wrapper.DoctorRepo.FindItemByCondition(d => d.Id == form.DoctorID);
+            if (doctor == null)
+                return new ResponseDto<AppointmentDto>(MsgResponce.Doctor.NotFound, true);
 
-            // Create Appointment
-            var appointment = dto.Adapt<Domain.Entities.Appointment>();
-            appointment.Status = Domain.Enums.AppointmentStatus.Scheduled;
-            await _repo.Appointments.AddAsync(appointment);
-            await _repo.SaveChangesAsync();
+            var availableAppointment = await IsAppointmentAvailable(form.DoctorID, form.AppointmentDate);
+            if (availableAppointment.Error)
+                return new ResponseDto<AppointmentDto>(MsgResponce.Appointment.AlreadyBooked, true);
 
-            var resultDto = appointment.Adapt<AppointmentDto>();
-            return new ResponseDto<AppointmentDto>(resultDto);
+            var appointment = form.Adapt<Appointment>();
+            appointment.CreatorId = _userAccessor.UserId;
+            appointment.CreatedAt = DateTime.Now;
+
+            await _wrapper.AppointmentRepo.Insert(appointment);
+            await _wrapper.SaveAllAsync();
+
+            appointment = await _wrapper.AppointmentRepo.FindByCondition(a => a.Id == appointment.Id)
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor)
+                .FirstOrDefaultAsync();
+
+            return new ResponseDto<AppointmentDto>(appointment.Adapt<AppointmentDto>());
         }
 
-        public async Task<ResponseDto<AppointmentDto>> UpdateAsync(int id, UpdateAppointmentDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<AppointmentDto>> Update(int id, UpdateAppointmentDto form)
         {
-            if (id <= 0 || dto == null)
-                return new ResponseDto<AppointmentDto>(MsgResponce.Failed, true);
-
-            var appointment = await _repo.Appointments.GetByIdAsync(id, track: true);
+            var appointment = await _wrapper.AppointmentRepo.FindByCondition(a => a.Id == id)
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor)
+                .FirstOrDefaultAsync();
             if (appointment == null)
                 return new ResponseDto<AppointmentDto>(MsgResponce.Appointment.NotFound, true);
 
-            // Update
-            appointment.AppointmentDate = dto.AppointmentDate ?? appointment.AppointmentDate;
-            if(Enum.TryParse<AppointmentStatus>(dto.Status, out var status))
-            appointment.Status = status;
-            appointment.Notes = dto.Notes;
+            var patient = await _wrapper.PatientRepo.FindItemByCondition(p => p.Id == form.PatientID);
+            if (patient == null)
+                return new ResponseDto<AppointmentDto>(MsgResponce.Patient.NotFound, true);
 
-            if (dto.DoctorID.HasValue && dto.DoctorID.Value > 0)
-            {
-                var doctor = await _repo.Doctors.GetByIdAsync(dto.DoctorID.Value, track: false);
-                if (doctor == null)
-                    return new ResponseDto<AppointmentDto>(MsgResponce.Doctor.NotFound, true);
+            var doctor = await _wrapper.DoctorRepo.FindItemByCondition(d => d.Id == form.DoctorID);
+            if (doctor == null)
+                return new ResponseDto<AppointmentDto>(MsgResponce.Doctor.NotFound, true);
 
-                appointment.DoctorID = dto.DoctorID.Value;
-            }
+            var availableAppointment = await IsAppointmentAvailable(form.DoctorID, form.AppointmentDate, id);
+            if (availableAppointment.Error)
+                return new ResponseDto<AppointmentDto>(MsgResponce.Appointment.AlreadyBooked, true);
 
-            if (dto.PatientID.HasValue &&  dto.PatientID.Value > 0)
-            {
-                var patient = await _repo.Patients.GetByIdAsync(dto.PatientID.Value, track: false);
-                if (patient == null)
-                    return new ResponseDto<AppointmentDto>(MsgResponce.Patient.NotFound, true);
+            var saveAppointment = form.Adapt(appointment);
+            saveAppointment.ModifierId = _userAccessor.UserId;
+            saveAppointment.ModifieAt = DateTime.Now;
 
-                appointment.PatientID = dto.PatientID.Value;
-            }
-
-            var slotAvailableResp = await IsSlotAvailableAsync(appointment.DoctorID, dto.AppointmentDate ?? appointment.AppointmentDate, id, ct);
-            if (!slotAvailableResp.Data)
-                return new ResponseDto<AppointmentDto>("Appointment slot is already booked.", true);
-
-            _repo.Appointments.Update(appointment);
-            await _repo.SaveChangesAsync();
-
-            var resultDto = appointment.Adapt<AppointmentDto>();
-            return new ResponseDto<AppointmentDto>(resultDto);
+            await _wrapper.AppointmentRepo.Update(saveAppointment);
+            return new ResponseDto<AppointmentDto>(saveAppointment.Adapt<AppointmentDto>());
         }
 
-        public async Task<ResponseDto<bool>> DeleteAsync(int id, CancellationToken ct = default)
+        public async Task<ResponseDto<bool>> Delete(int id)
         {
-            if (id <= 0)
-                return new ResponseDto<bool>(MsgResponce.Appointment.NotFound, true);
-
-            var appointment = await _repo.Appointments.GetByIdAsync(id, track: true);
+            var appointment = await _wrapper.AppointmentRepo.FindItemByCondition(a => a.Id == id);
             if (appointment == null)
                 return new ResponseDto<bool>(MsgResponce.Appointment.NotFound, true);
 
-            _repo.Appointments.Remove(appointment);
-            await _repo.SaveChangesAsync();
-
+            appointment.DeleterId = _userAccessor.UserId;
+            await _wrapper.AppointmentRepo.Delete(id);
+            await _wrapper.SaveAllAsync();
             return new ResponseDto<bool>(true);
+        }
+
+        public async Task<ResponseDto<bool>> IsAppointmentAvailable(int? doctorId, DateTime? appointmentDate, int? excludeAppointmentId = null)
+        {
+            var query = _wrapper.AppointmentRepo.GetAll()
+                .Where(a => a.DoctorID == doctorId && a.AppointmentDate == appointmentDate && a.Status != AppointmentStatus.Cancelled);
+
+            if (excludeAppointmentId.HasValue)
+                query = query.Where(a => a.Id != excludeAppointmentId.Value);
+
+            if (!await query.AnyAsync())
+                return new ResponseDto<bool>(MsgResponce.Appointment.CurrentlyAvailable, true);
+            else
+                return new ResponseDto<bool>(MsgResponce.Appointment.AlreadyBooked, true);
         }
     }
 }

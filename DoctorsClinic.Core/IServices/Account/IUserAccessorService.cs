@@ -4,7 +4,7 @@ namespace DoctorsClinic.Core.IServices.Account
 {
     public interface IUserAccessorService : IScopedService
     {
-        int UserId { get; }
+        Guid UserId { get; }
         string UserName { get; }
         string RoleName { get; }
         string Permissions { get; }

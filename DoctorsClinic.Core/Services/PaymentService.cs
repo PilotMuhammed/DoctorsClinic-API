@@ -3,6 +3,8 @@ using DoctorsClinic.Core.Dtos.Payments;
 using DoctorsClinic.Core.Extensions;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices;
+using DoctorsClinic.Core.IServices.Account;
+using DoctorsClinic.Domain.Entities;
 using DoctorsClinic.Infrastructure.IRepositories;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -11,170 +13,104 @@ namespace DoctorsClinic.Core.Services
 {
     public class PaymentService : IPaymentService
     {
-        private readonly IRepositoryWrapper _repo;
-
-        public PaymentService(IRepositoryWrapper repo)
+        private readonly IRepositoryWrapper _wrapper;
+        private readonly IUserAccessorService _userAccessor;
+        public PaymentService(IRepositoryWrapper wrapper, IUserAccessorService userAccessor)
         {
-            _repo = repo;
+            _wrapper = wrapper;
+            _userAccessor = userAccessor;
         }
 
-        // GetAllAsync 
-        public async Task<ResponseDto<PaginationDto<PaymentDto>>> GetAllAsync(
-            PaginationQuery pagination,
-            PaymentFilterDto filter,
-            CancellationToken ct = default)
+        public async Task<ResponseDto<PaginationDto<PaymentDto>>> GetAll(PaginationQuery paginationQuery, PaymentFilterDto filter)
         {
-            if (pagination == null)
-                return new ResponseDto<PaginationDto<PaymentDto>>(MsgResponce.Failed, true);
+            #region Apply Filter
+            var query = _wrapper.PaymentRepo.GetAll()
+                .Include(pa => pa.Invoice)
+                .Where(pa => !filter.InvoiceID.HasValue || pa.InvoiceID == filter.InvoiceID)
+                .Where(pa => !filter.Amount.HasValue || pa.Amount == filter.Amount)
+                .Where(pa => !filter.PaymentMethod.HasValue || pa.PaymentMethod == filter.PaymentMethod);
+            #endregion
 
-            var query = _repo.Payments.GetAll(track: false);
-
-            if (filter != null)
-            {
-                if (filter.InvoiceID.HasValue)
-                    query = query.Where(p => p.InvoiceID == filter.InvoiceID.Value);
-
-                if (!string.IsNullOrWhiteSpace(filter.PaymentMethod))
-                    if(Enum.TryParse<Domain.Enums.PaymentMethod>(filter.PaymentMethod, true, out var paymentMethodEnum))
-                    query = query.Where(p => p.PaymentMethod == paymentMethodEnum);
-
-                if (filter.DateFrom.HasValue)
-                    query = query.Where(p => p.Date >= filter.DateFrom.Value);
-                if (filter.DateTo.HasValue)
-                    query = query.Where(p => p.Date <= filter.DateTo.Value);
-                if (filter.AmountFrom.HasValue)
-                    query = query.Where(p => p.Amount >= filter.AmountFrom.Value);
-                if (filter.AmountTo.HasValue)
-                    query = query.Where(p => p.Amount <= filter.AmountTo.Value);
-            }
-
-            var totalCount = await query.CountAsync(ct);
             var data = await query
-                .ApplyPagging(pagination)
+                .OrderByDescending(pa => pa.CreatedAt)
+                .ApplyPagging(paginationQuery)
                 .ProjectToType<PaymentDto>()
-                .ToListAsync(ct);
+                .ToListAsync();
 
-            var meta = new PaginationMetadata(totalCount, pagination);
-            var paginated = new PaginationDto<PaymentDto>(data, meta);
+            var count = await query.CountAsync();
+            var metadata = new PaginationMetadata(count, paginationQuery);
 
-            if (!data.Any())
-                return new ResponseDto<PaginationDto<PaymentDto>>(MsgResponce.Payment.Failed, true);
-
-            return new ResponseDto<PaginationDto<PaymentDto>>(paginated);
+            return new ResponseDto<PaginationDto<PaymentDto>>(
+                new PaginationDto<PaymentDto>(data, metadata));
         }
 
-        // GetByInvoiceAsync
-        public async Task<ResponseDto<List<PaymentDto>>> GetByInvoiceAsync(int invoiceId, CancellationToken ct = default)
+        public async Task<ResponseDto<PaymentResponseDto>> GetById(int id)
         {
-            if (invoiceId <= 0)
-                return new ResponseDto<List<PaymentDto>>(MsgResponce.Invoice.NotFound, true);
+            var payment = await _wrapper.PaymentRepo.FindByCondition(pa => pa.Id == id)
+                .Include(pa => pa.Invoice)
+                .FirstOrDefaultAsync();
 
-            var payments = await _repo.Payments
-                .FindByCondition(p => p.InvoiceID == invoiceId, track: false)
-                .ProjectToType<PaymentDto>()
-                .ToListAsync(ct);
-
-            if (!payments.Any())
-                return new ResponseDto<List<PaymentDto>>(MsgResponce.Payment.Failed, true);
-
-            return new ResponseDto<List<PaymentDto>>(payments);
-        }
-
-        // GetByIdAsync
-        public async Task<ResponseDto<PaymentResponseDto>> GetByIdAsync(int id, CancellationToken ct = default)
-        {
-            if (id <= 0)
-                return new ResponseDto<PaymentResponseDto>(MsgResponce.Payment.Failed, true);
-
-            var payment = await _repo.Payments.GetWithInvoiceAsync(id);
             if (payment == null)
-                return new ResponseDto<PaymentResponseDto>(MsgResponce.Payment.Failed, true);
+                return new ResponseDto<PaymentResponseDto>(MsgResponce.Payment.NotFound, true);
 
-            var paymentDto = payment.Adapt<PaymentDto>();
-            var invoiceDto = payment.Invoice?.Adapt<Core.Dtos.Invoices.InvoiceDto>();
-
-            var response = new PaymentResponseDto
-            {
-                Payment = paymentDto,
-                Invoice = invoiceDto
-            };
-
-            return new ResponseDto<PaymentResponseDto>(response);
+            return new ResponseDto<PaymentResponseDto>(payment.Adapt<PaymentResponseDto>());
         }
 
-        // CreateAsync
-        public async Task<ResponseDto<PaymentDto>> CreateAsync(CreatePaymentDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<PaymentDto>> Add(CreatePaymentDto form)
         {
-            if (dto == null)
-                return new ResponseDto<PaymentDto>(MsgResponce.Failed, true);
-
-            // Check Invoice
-            var invoice = await _repo.Invoices.GetByIdAsync(dto.InvoiceID, track: false);
+            var invoice = await _wrapper.InvoiceRepo.FindItemByCondition(inv => inv.Id == form.InvoiceID);
             if (invoice == null)
                 return new ResponseDto<PaymentDto>(MsgResponce.Invoice.NotFound, true);
 
-            if (dto.Amount <= 0)
-                return new ResponseDto<PaymentDto>("Amount must be greater than zero.", true);
+            if (form.Amount <= 0)
+                return new ResponseDto<PaymentDto>(MsgResponce.AlarmAmounts.WrongEntry);
 
-            if (string.IsNullOrWhiteSpace(dto.PaymentMethod))
-                return new ResponseDto<PaymentDto>("Payment method is required.", true);
+            var payment = form.Adapt<Payment>();
+            payment.CreatorId = _userAccessor.UserId;
+            payment.CreatedAt = DateTime.Now;
 
-            var payment = dto.Adapt<Domain.Entities.Payment>();
-            await _repo.Payments.AddAsync(payment);
-            await _repo.SaveChangesAsync();
+            await _wrapper.PaymentRepo.Insert(payment);
+            await _wrapper.SaveAllAsync();
 
-            var resultDto = payment.Adapt<PaymentDto>();
-            return new ResponseDto<PaymentDto>(resultDto);
+            payment = await _wrapper.PaymentRepo.FindByCondition(pa => pa.Id == payment.Id)
+                .Include(pa => pa.Invoice)
+                .FirstOrDefaultAsync();
+
+            return new ResponseDto<PaymentDto>(payment.Adapt<PaymentDto>());
         }
 
-        // UpdateAsync
-        public async Task<ResponseDto<PaymentDto>> UpdateAsync(int id, UpdatePaymentDto dto, CancellationToken ct = default)
+        public async Task<ResponseDto<PaymentDto>> Update(int id, UpdatePaymentDto form)
         {
-            if (id <= 0 || dto == null)
-                return new ResponseDto<PaymentDto>(MsgResponce.Failed, true);
-
-            var payment = await _repo.Payments.GetByIdAsync(id, track: true);
+            var payment = await _wrapper.PaymentRepo.FindByCondition(pa => pa.Id == id)
+                .Include(pa => pa.Invoice)
+                .FirstOrDefaultAsync();
             if (payment == null)
-                return new ResponseDto<PaymentDto>(MsgResponce.Payment.Failed, true);
+                return new ResponseDto<PaymentDto>(MsgResponce.Payment.NotFound, true);
 
-            if (dto.InvoiceID.HasValue && dto.InvoiceID.Value > 0 && dto.InvoiceID != payment.InvoiceID)
-            {
-                var invoice = await _repo.Invoices.GetByIdAsync(dto.InvoiceID.Value, track: false);
-                if (invoice == null)
-                    return new ResponseDto<PaymentDto>(MsgResponce.Invoice.NotFound, true);
+            var invoice = await _wrapper.InvoiceRepo.FindItemByCondition(inv => inv.Id == form.InvoiceID);
+            if (invoice == null)
+                return new ResponseDto<PaymentDto>(MsgResponce.Invoice.NotFound, true);
 
-                payment.InvoiceID = dto.InvoiceID.Value;
-            }
+            if (form.Amount <= 0)
+                return new ResponseDto<PaymentDto>(MsgResponce.AlarmAmounts.WrongEntry);
 
-            if (dto.Amount.HasValue && dto.Amount.Value > 0)
-                payment.Amount = dto.Amount.Value;
-            if (dto.Date.HasValue)
-                payment.Date = dto.Date.Value;
+            var savePayment = form.Adapt(payment);
+            savePayment.ModifierId = _userAccessor.UserId;
+            savePayment.ModifieAt = DateTime.Now;
 
-            if (!string.IsNullOrWhiteSpace(dto.PaymentMethod))
-                if (Enum.TryParse<Domain.Enums.PaymentMethod>(dto.PaymentMethod, true, out var paymentMethodEnum))
-                    payment.PaymentMethod = paymentMethodEnum;
-
-            _repo.Payments.Update(payment);
-            await _repo.SaveChangesAsync();
-
-            var resultDto = payment.Adapt<PaymentDto>();
-            return new ResponseDto<PaymentDto>(resultDto);
+            await _wrapper.PaymentRepo.Update(savePayment);
+            return new ResponseDto<PaymentDto>(savePayment.Adapt<PaymentDto>());
         }
 
-        // DeleteAsync
-        public async Task<ResponseDto<bool>> DeleteAsync(int id, CancellationToken ct = default)
+        public async Task<ResponseDto<bool>> Delete(int id)
         {
-            if (id <= 0)
-                return new ResponseDto<bool>(MsgResponce.Payment.Failed, true);
-
-            var payment = await _repo.Payments.GetByIdAsync(id, track: true);
+            var payment = await _wrapper.PaymentRepo.FindItemByCondition(pa => pa.Id == id);
             if (payment == null)
-                return new ResponseDto<bool>(MsgResponce.Payment.Failed, true);
+                return new ResponseDto<bool>(MsgResponce.Payment.NotFound, true);
 
-            _repo.Payments.Remove(payment);
-            await _repo.SaveChangesAsync();
-
+            payment.DeleterId = _userAccessor.UserId;
+            await _wrapper.PaymentRepo.Delete(id);
+            await _wrapper.SaveAllAsync();
             return new ResponseDto<bool>(true);
         }
     }

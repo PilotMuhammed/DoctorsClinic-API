@@ -5,7 +5,7 @@ namespace DoctorsClinic.Core.Dtos.Account
 {
     public class LoginUserResponse
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string? FullName { get; set; }
         public string? UserName { get; set; } 
         public required string Token { get; set; }                

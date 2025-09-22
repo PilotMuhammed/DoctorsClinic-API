@@ -2,7 +2,7 @@
 {
     public class PrescriptionDto
     {
-        public int PrescriptionID { get; set; }
+        public int Id { get; set; }
         public int AppointmentID { get; set; }
         public int DoctorID { get; set; }
         public string? DoctorName { get; set; }

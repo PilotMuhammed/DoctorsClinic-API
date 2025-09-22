@@ -15,7 +15,8 @@ namespace DoctorsClinic.Core.Mapster
                 .Map(dest => dest.PrescriptionMedicine, src => src.Adapt<PrescriptionMedicineDto>())
                 .Map(dest => dest.Medicine, src => src.Medicine.Adapt<MedicineDto>());
 
-            TypeAdapterConfig<PrescriptionMedicine, PrescriptionMedicineDto>.NewConfig();
+            TypeAdapterConfig<PrescriptionMedicine, PrescriptionMedicineDto>.NewConfig()
+                .Map(dest => dest.MedicineName, src => src.Medicine!.Name);
 
             TypeAdapterConfig<UpdatePrescriptionMedicineDto, PrescriptionMedicine>.NewConfig()
                 .IgnoreIf((src, dest) => src.PrescriptionID == null, dest => dest.PrescriptionID)

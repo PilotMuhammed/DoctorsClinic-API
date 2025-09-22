@@ -2,7 +2,7 @@
 
 namespace DoctorsClinic.Infrastructure.IRepositories
 {
-    public interface IUserRepo : IRepositoryBase<User, int>
+    public interface IUserRepo : IRepositoryBase<User, Guid>
     {
     }
 }

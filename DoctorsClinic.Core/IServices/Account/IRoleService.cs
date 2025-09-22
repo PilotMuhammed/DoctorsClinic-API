@@ -14,6 +14,6 @@ namespace DoctorsClinic.Core.IServices.Account
         Task<ResponseDto<GetRole>> Add(CreateRole form);
         Task<ResponseDto<GetRole>> Update(int id, UpdateRole form);
         Task<ResponseDto<bool>> Delete(int id);
-        Task<ResponseDto<UserResponseDto>> SetRoleToUser(int userId, int roleId);
+        Task<ResponseDto<UserResponseDto>> SetRoleToUser(Guid userId, int roleId);
     }
 }
