@@ -1,4 +1,5 @@
 ﻿using DoctorsClinic.Core.Dtos;
+using DoctorsClinic.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -7,9 +8,9 @@ namespace Api.Helper
 
     public class AuthorizePermissionAttribute : Attribute, IAuthorizationFilter
     {
-        private readonly string[] _requiredPermissions;
+        private readonly EPermission[] _requiredPermissions;
 
-        public AuthorizePermissionAttribute(params string[] requiredPermissions)
+        public AuthorizePermissionAttribute(params EPermission[] requiredPermissions)
         {
             _requiredPermissions = requiredPermissions;
         }
@@ -40,7 +41,9 @@ namespace Api.Helper
 
             var userPermissions = permissionsClaim.Value
                 .Split(',')
-                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => int.TryParse(p, out var val) ? (EPermission?)val : null)
+                .Where(p => p.HasValue)
+                .Select(p => p!.Value)
                 .ToList();
 
             var hasAllPermissions = _requiredPermissions.All(rp => userPermissions.Contains(rp));
