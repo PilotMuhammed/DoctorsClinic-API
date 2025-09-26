@@ -1,5 +1,6 @@
 ﻿using DoctorsClinic.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace DoctorsClinic.Infrastructure.Data
 {
@@ -34,7 +35,7 @@ namespace DoctorsClinic.Infrastructure.Data
         }
 
 
-        // This class is used by EF Core Only when performing Add-Migration || Update-Database
+        //This class is used by EF Core Only when performing Add-Migration || Update-Database
         //public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         //{
         //    public AppDbContext CreateDbContext(string[] args)
