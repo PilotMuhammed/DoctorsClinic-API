@@ -1,85 +1,83 @@
 ﻿using Api.Helper;
 using DocotorClinic.Api.Controllers;
+using DoctorsClinic.Core.Dtos;
 using DoctorsClinic.Core.Dtos.Invoices;
-using DoctorsClinic.Core.Dtos.Permission;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices;
-using Microsoft.AspNetCore.Authorization;
+using DoctorsClinic.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Api.Controllers
 {
-    [Authorize]
-    [Route("api/[controller]")]
-    [ApiController]
     public class InvoicesController : BaseApiController
     {
-        private readonly IInvoiceService _invoiceService;
-
-        public InvoicesController(IInvoiceService invoiceService)
+        private readonly IInvoiceService _service;
+        public InvoicesController(IInvoiceService service)
         {
-            _invoiceService = invoiceService;
+            _service = service;
         }
 
-        [AuthorizePermission(Permissions.Invoices_View)]
+        [AuthorizePermission(EPermission.Invoices_View)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<PaginationDto<InvoiceDto>>), (int)HttpStatusCode.OK)]
         [HttpGet]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] PaginationQuery pagination,
-            [FromQuery] InvoiceFilterDto filter,
-            CancellationToken ct)
+        public async Task<ActionResult> GetAll([FromQuery] PaginationQuery paginationQuery, [FromQuery] InvoiceFilterDto filter)
         {
-            var result = await _invoiceService.GetAllAsync(pagination, filter, ct);
-            return Ok(result);
+            var response = await _service.GetAll(paginationQuery, filter);
+            return Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Invoices_View)]
+        [AuthorizePermission(EPermission.Invoices_View)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<InvoiceResponseDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken ct)
+        public async Task<ActionResult> GetById(int id)
         {
-            var result = await _invoiceService.GetByIdAsync(id, ct);
-            if (result == null || result.Error)
-                return NotFound(result);
-
-            return Ok(result);
+            var response = await _service.GetById(id);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Invoices_Create)]
+        [AuthorizePermission(EPermission.Invoices_Create)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<InvoiceDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateInvoiceDto dto, CancellationToken ct)
+        public async Task<ActionResult> Post([FromBody] CreateInvoiceDto form)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _invoiceService.CreateAsync(dto, ct);
-            if (result.Error)
-                return BadRequest(result);
-
-            return Ok(result);
+            var response = await _service.Add(form);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Invoices_Update)]
+        [AuthorizePermission(EPermission.Invoices_Update)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<InvoiceDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateInvoiceDto dto, CancellationToken ct)
+        public async Task<ActionResult> Put(int id, [FromBody] UpdateInvoiceDto form)
         {
-            if (id != dto.InvoiceID)
-                return BadRequest("Invoice ID mismatch.");
-
-            var result = await _invoiceService.UpdateAsync(id, dto, ct);
-            if (result.Error)
-                return BadRequest(result);
-
-            return Ok(result);
+            var response = await _service.Update(id, form);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Invoices_Delete)]
+        [AuthorizePermission(EPermission.Invoices_Delete)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<bool>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, CancellationToken ct)
+        public async Task<ActionResult> Delete(int id)
         {
-            var result = await _invoiceService.DeleteAsync(id, ct);
-            if (result.Error)
-                return BadRequest(result);
-
-            return Ok(result);
+            var response = await _service.Delete(id);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
     }
 }

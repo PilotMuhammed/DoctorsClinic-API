@@ -1,33 +1,55 @@
-﻿using DoctorsClinic.Core.Dtos.Account;
+﻿using DocotorClinic.Api.Controllers;
+using DoctorsClinic.Core.Dtos;
+using DoctorsClinic.Core.Dtos.Account;
 using DoctorsClinic.Core.IServices.Account;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Api.Controllers.Account
 {
-    [AllowAnonymous]
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AuthController : ControllerBase
+    [ApiExplorerSettings(IgnoreApi = false)]
+    public class AuthController : BaseApiController
     {
-        private readonly IAuthService _authService;
+        private readonly IAuthService _service;
+        private readonly IUserAccessorService _userAccessor;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService service, IUserAccessorService userAccessor)
         {
-            _authService = authService;
+            _service = service;
+            _userAccessor = userAccessor;
+        }
+        [AllowAnonymous]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<LoginUserResponse>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<bool>), (int)HttpStatusCode.BadRequest)]
+        [HttpPost]
+        public async Task<IActionResult> Login([FromBody] LoginUser login)
+        {
+            var userLogin = await _service.Login(login);
+            return userLogin.Error
+                ? BadRequest(userLogin)
+                : Ok(userLogin);
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginUser dto, CancellationToken ct)
+        [HttpGet("[action]")]
+        public ActionResult TestUserAccessor()
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _authService.LoginAsync(dto, ct);
-            if (result.Error)
-                return Unauthorized(result);
-
-            return Ok(result);
+            var response = new UserAccessorResponce
+            {
+                UserId = _userAccessor.UserId,
+                UserName = _userAccessor.UserName,
+                RoleName = _userAccessor.RoleName,
+                Permissions = _userAccessor.Permissions
+            };
+            return Ok(response);
+        }
+        public class UserAccessorResponce
+        {
+            public string UserName { get; set; }
+            public Guid UserId { get; set; }
+            public string RoleName { get; set; }
+            public string Permissions { get; set; }
         }
     }
 }

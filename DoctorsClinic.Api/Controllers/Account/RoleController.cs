@@ -1,45 +1,101 @@
 ﻿using Api.Helper;
-using DoctorsClinic.Core.Dtos.Permission;
+using DocotorClinic.Api.Controllers;
+using DoctorsClinic.Core.Dtos;
 using DoctorsClinic.Core.Dtos.Role;
+using DoctorsClinic.Core.Dtos.Users;
+using DoctorsClinic.Core.Helper;
+using DoctorsClinic.Core.IServices.Account;
 using DoctorsClinic.Domain.Enums;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using System.Net;
 
 namespace Api.Controllers.Account
 {
-    [Authorize]
-    [AuthorizePermission(Permissions.Users_View)]
-    [Route("api/[controller]")]
-    [ApiController]
-    public class RoleController : ControllerBase
+    [AuthorizePermission(EPermission.Role)]
+    public class RoleController : BaseApiController
     {
-
-        [HttpGet]
-        public IActionResult GetAllRoles()
+        private readonly IRoleService _service;
+        public RoleController(IRoleService authService)
         {
-            var roles = Enum.GetValues(typeof(UserRole))
-                .Cast<UserRole>()
-                .Select(r => new GetRole
-                {
-                    Id = (int)r,
-                    Name = r.ToString()
-                })
-                .ToList();
-
-            return Ok(roles);
+            _service = authService;
         }
 
-        [HttpGet("{roleId}/permissions")]
-        public IActionResult GetRolePermissions(int roleId)
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<PaginationDto<GetRole>>), (int)HttpStatusCode.OK)]
+        [HttpGet]
+        public async Task<ActionResult> GetAll([FromQuery] PaginationQuery paginationQuery, [FromQuery] RoleFilter filter)
         {
-            if (!Enum.IsDefined(typeof(UserRole), roleId))
-                return BadRequest("Invalid role ID.");
+            var response = await _service.GetAll(paginationQuery, filter);
+            return Ok(response);
+        }
 
-            var role = (UserRole)roleId;
-            var permissions = RolePermissionMap.GetPermissions(role);
+        [AuthorizePermission(EPermission.AddRole)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<GetRole>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
+        [HttpPost]
+        public async Task<ActionResult> Post([FromBody] CreateRole form)
+        {
+            var response = await _service.Add(form);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
+        }
 
-            return Ok(permissions);
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<IEnumerable<ListDto<int>>>), (int)HttpStatusCode.OK)]
+        [HttpGet("[action]")]
+        public async Task<ActionResult> GetList()
+        {
+            var response = await _service.GetList();
+            return Ok(response);
+        }
+
+        [ProducesResponseType(typeof(ResponseDto<GetRole>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
+        [HttpGet("{id}")]
+        public async Task<ActionResult> GetById(int id)
+        {
+            var response = await _service.GetById(id);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
+        }
+
+        [AuthorizePermission(EPermission.EditRole)]
+        [ProducesResponseType(typeof(ResponseDto<GetRole>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(int id, [FromBody] UpdateRole form)
+        {
+            var response = await _service.Update(id, form);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
+        }
+
+        [AuthorizePermission(EPermission.DeleteRole)]
+        [ProducesResponseType(typeof(ResponseDto<bool>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<GetRole>> Delete(int id)
+        {
+            var response = await _service.Delete(id);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
+        }
+
+        [AuthorizePermission(EPermission.SetRole)]
+        [ProducesResponseType(typeof(ResponseDto<UserResponseDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
+        [HttpPut("Set/{userId}/{roleId}")]
+        public async Task<IActionResult> SetRole(Guid userId, int roleId)
+        {
+            var response = await _service.SetRoleToUser(userId, roleId);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
     }
 }

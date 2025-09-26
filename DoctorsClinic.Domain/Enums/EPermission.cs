@@ -4,10 +4,11 @@ namespace DoctorsClinic.Domain.Enums
 {
     public enum EPermission
     {
-        [Display(Name = "عرض المستخدمين")] Users_View = 1,
-        [Display(Name = "إضافة مستخدم")] Users_Create,
-        [Display(Name = "تعديل مستخدم")] Users_Update,
-        [Display(Name = "حذف مستخدم")] Users_Delete,
+        [Display(Name = "المستخدمين")] User = 1,
+        [Display(Name = "اضافة مستخدم")] AddUser,
+        [Display(Name = "تعديل مستخدم")] EditUser,
+        [Display(Name = "حذف مستخدم")] DeleteUser,
+        [Display(Name = "ادارة المستخدمين")] ManageUser,
 
         [Display(Name = "الادوار")] Role,
         [Display(Name = "اضافة دور")] AddRole,

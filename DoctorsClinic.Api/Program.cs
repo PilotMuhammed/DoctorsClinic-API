@@ -3,9 +3,7 @@ using DoctorClinic.Api.Helper;
 using DoctorClinic.Api.Middleware;
 using DoctorsClinic.Api.Middlewares;
 using DoctorsClinic.Core.Extensions;
-using DoctorsClinic.Core.IServices.Account;
 using DoctorsClinic.Core.Mapster;
-using DoctorsClinic.Core.Services.Account;
 using DoctorsClinic.Infrastructure.Data;
 using DoctorsClinic.Infrastructure.IRepositories;
 using DoctorsClinic.Infrastructure.Repositories;
@@ -14,7 +12,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-
 
 var builder = WebApplication.CreateBuilder(args);
 

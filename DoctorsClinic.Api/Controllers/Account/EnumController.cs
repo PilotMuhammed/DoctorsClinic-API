@@ -1,17 +1,12 @@
-﻿using Api.Helper;
-using DoctorsClinic.Core.Dtos.Permission;
+﻿using DocotorClinic.Api.Controllers;
 using DoctorsClinic.Core.Helper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers.Account
 {
-    [Authorize]
-    [AuthorizePermission(Permissions.Users_View)]
-    [Route("api/[controller]")]
-    [ApiController]
-    public class EnumController : ControllerBase
+    public class EnumController : BaseApiController
     {
+        [Produces("application/json")]
         [HttpGet]
         public IActionResult GetAllEnums()
         {

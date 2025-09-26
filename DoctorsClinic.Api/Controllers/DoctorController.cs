@@ -1,84 +1,93 @@
 ﻿using Api.Helper;
 using DocotorClinic.Api.Controllers;
+using DoctorsClinic.Core.Dtos;
 using DoctorsClinic.Core.Dtos.Doctors;
-using DoctorsClinic.Core.Dtos.Permission;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices;
-using Microsoft.AspNetCore.Authorization;
+using DoctorsClinic.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Api.Controllers
 {
-    [Authorize]
-    [Route("api/[controller]")]
-    [ApiController]
     public class DoctorsController : BaseApiController
     {
-        private readonly IDoctorService _doctorService;
-
-        public DoctorsController(IDoctorService doctorService)
+        private readonly IDoctorService _service;
+        public DoctorsController(IDoctorService service)
         {
-            _doctorService = doctorService;
+            _service = service;
         }
 
-        [AuthorizePermission(Permissions.Doctors_View)]
+        [AuthorizePermission(EPermission.Doctors_View)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<PaginationDto<DoctorDto>>), (int)HttpStatusCode.OK)]
         [HttpGet]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] PaginationQuery pagination,
-            [FromQuery] DoctorFilterDto filter,
-            CancellationToken ct)
+        public async Task<ActionResult> GetAll([FromQuery] PaginationQuery paginationQuery, [FromQuery] DoctorFilterDto filter)
         {
-            var result = await _doctorService.GetAllAsync(pagination, filter, ct);
-            return Ok(result);
+            var response = await _service.GetAll(paginationQuery, filter);
+            return Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Doctors_View)]
+        [AuthorizePermission(EPermission.Doctors_View)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<IEnumerable<ListDto<int>>>), (int)HttpStatusCode.OK)]
+        [HttpGet("[action]")]
+        public async Task<ActionResult> GetList()
+        {
+            var response = await _service.GetList();
+            return Ok(response);
+        }
+
+        [AuthorizePermission(EPermission.Doctors_View)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<DoctorResponseDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken ct)
+        public async Task<ActionResult> GetById(int id)
         {
-            var result = await _doctorService.GetByIdAsync(id, ct);
-            if (result == null || result.Error)
-                return NotFound(result);
-            return Ok(result);
+            var response = await _service.GetById(id);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Doctors_Create)]
+        [AuthorizePermission(EPermission.Doctors_Create)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<DoctorDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateDoctorDto dto, CancellationToken ct)
+        public async Task<ActionResult> Post([FromBody] CreateDoctorDto form)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _doctorService.CreateAsync(dto, ct);
-            if (result.Error)
-                return BadRequest(result);
-
-            return Ok(result);
+            var response = await _service.Add(form);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Doctors_Update)]
+        [AuthorizePermission(EPermission.Doctors_Update)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<DoctorDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateDoctorDto dto, CancellationToken ct)
+        public async Task<ActionResult> Put(int id, [FromBody] UpdateDoctorDto form)
         {
-            if (id != dto.DoctorID)
-                return BadRequest("Doctor ID mismatch.");
-
-            var result = await _doctorService.UpdateAsync(id, dto, ct);
-            if (result.Error)
-                return BadRequest(result);
-
-            return Ok(result);
+            var response = await _service.Update(id, form);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Doctors_Delete)]
+        [AuthorizePermission(EPermission.Doctors_Delete)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<bool>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, CancellationToken ct)
+        public async Task<ActionResult> Delete(int id)
         {
-            var result = await _doctorService.DeleteAsync(id, ct);
-            if (result.Error)
-                return BadRequest(result);
-
-            return Ok(result);
+            var response = await _service.Delete(id);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
     }
 }

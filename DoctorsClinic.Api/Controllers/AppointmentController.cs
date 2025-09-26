@@ -1,84 +1,94 @@
 ﻿using Api.Helper;
 using DocotorClinic.Api.Controllers;
+using DoctorsClinic.Core.Dtos;
 using DoctorsClinic.Core.Dtos.Appointments;
-using DoctorsClinic.Core.Dtos.Permission;
 using DoctorsClinic.Core.Helper;
 using DoctorsClinic.Core.IServices;
-using Microsoft.AspNetCore.Authorization;
+using DoctorsClinic.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Api.Controllers
 {
-    [Authorize]
-    [Route("api/[controller]")]
-    [ApiController]
     public class AppointmentsController : BaseApiController
     {
-        private readonly IAppointmentService _appointmentService;
+        private readonly IAppointmentService _service;
 
-        public AppointmentsController(IAppointmentService appointmentService)
+        public AppointmentsController(IAppointmentService service)
         {
-            _appointmentService = appointmentService;
+            _service = service;
         }
 
-        [AuthorizePermission(Permissions.Appointments_View)]
+        [AuthorizePermission(EPermission.Appointments_View)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<PaginationDto<AppointmentDto>>), (int)HttpStatusCode.OK)]
         [HttpGet]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] PaginationQuery pagination,
-            [FromQuery] AppointmentFilterDto filter,
-            CancellationToken ct)
+        public async Task<ActionResult> GetAll([FromQuery] PaginationQuery paginationQuery, [FromQuery] AppointmentFilterDto filter)
         {
-            var result = await _appointmentService.GetAllAsync(pagination, filter, ct);
-            return Ok(result);
+            var response = await _service.GetAll(paginationQuery, filter);
+            return Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Appointments_View)]
+        [AuthorizePermission(EPermission.Appointments_View)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<AppointmentResponseDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken ct)
+        public async Task<ActionResult> GetById(int id)
         {
-            var result = await _appointmentService.GetByIdAsync(id, ct);
-            if (result == null || result.Error)
-                return NotFound(result);
-            return Ok(result);
+            var response = await _service.GetById(id);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Appointments_Create)]
+        [AuthorizePermission(EPermission.Appointments_Create)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<AppointmentDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateAppointmentDto dto, CancellationToken ct)
+        public async Task<ActionResult> Post([FromBody] CreateAppointmentDto form)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _appointmentService.CreateAsync(dto, ct);
-            if (result.Error)
-                return BadRequest(result);
-
-            return Ok(result);
+            var response = await _service.Add(form);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Appointments_Update)]
+        [AuthorizePermission(EPermission.Appointments_Update)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<AppointmentDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateAppointmentDto dto, CancellationToken ct)
+        public async Task<ActionResult> Put(int id, [FromBody] UpdateAppointmentDto form)
         {
-            if (id != dto.AppointmentID)
-                return BadRequest("Appointment ID mismatch.");
-
-            var result = await _appointmentService.UpdateAsync(id, dto, ct);
-            if (result.Error)
-                return BadRequest(result);
-
-            return Ok(result);
+            var response = await _service.Update(id, form);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
         }
 
-        [AuthorizePermission(Permissions.Appointments_Delete)]
+        [AuthorizePermission(EPermission.Appointments_Delete)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<bool>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ResponseDto<string>), (int)HttpStatusCode.BadRequest)]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, CancellationToken ct)
+        public async Task<ActionResult> Delete(int id)
         {
-            var result = await _appointmentService.DeleteAsync(id, ct);
-            if (result.Error)
-                return BadRequest(result);
+            var response = await _service.Delete(id);
+            return response.Error
+                ? BadRequest(response)
+                : Ok(response);
+        }
 
-            return Ok(result);
+        [AuthorizePermission(EPermission.Appointments_View, EPermission.Appointments_Create, EPermission.Appointments_Update)]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto<bool>), (int)HttpStatusCode.OK)]
+        [HttpGet("IsAvailable")]
+        public async Task<ActionResult> IsAppointmentAvailable([FromQuery] int? doctorId, [FromQuery] DateTime? appointmentDate, [FromQuery] int? excludeAppointmentId = null)
+        {
+            var response = await _service.IsAppointmentAvailable(doctorId, appointmentDate, excludeAppointmentId);
+            return Ok(response);
         }
     }
 }
